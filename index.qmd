@@ -1,0 +1,38 @@
+---
+title: "Home"
+format: html
+editor: visual
+---
+
+
+
+## Featured
+
+:::::: grid
+::: g-col-4
+[**Tidy Tuesday: NYC Elevators**](/tidy_tuesday_nyc_elevators/tidy_tuesday_nyc_elevators.qmd)
+
+Exploring the tallest and fastest elevators in NYC.
+:::
+
+::: g-col-4
+![](https://via.placeholder.com/100)
+
+[**Page 2**](page2.qmd)
+
+Overview of the second topic.
+:::
+
+::: g-col-4
+![](https://via.placeholder.com/100)
+
+[**Page 3**](page3.qmd)
+
+Details about the third topic.
+:::
+::::::
+
+## All
+
+-   [NYC Elevators](/tidy_tuesday_nyc_elevators/tidy_tuesday_nyc_elevators.qmd): Exploring the tallest and fastest elevators in NYC.
+

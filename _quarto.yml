@@ -1,3 +1,23 @@
 project:
   type: website
   output-dir: docs
+
+website:
+  title: "Analysis Portfolio"
+  # navbar:
+  #   left:
+  #     - href: index.qmd
+  #       text: Home
+  #     - href: index.qmd
+  #       text: Home
+  sidebar:
+    style: "docked"
+    contents:
+      - section: "Analyses"
+        contents:
+          - index.qmd
+          - tidy_tuesday_nyc_elevators/tidy_tuesday_nyc_elevators.qmd
+      - section: "More from Anthony"
+        contents:
+          - href: https://anthony.computer
+            text: anthony.computer

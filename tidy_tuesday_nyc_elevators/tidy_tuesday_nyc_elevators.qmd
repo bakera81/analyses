@@ -7,7 +7,7 @@ website:
   title: "Tidy Tuesday: NYC Elevators"
 ---
 
-## Tidy Tuesday: NYC Elevators 2022-12-06
+## Tidy Tuesday: NYC Elevators
 
 Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
 
