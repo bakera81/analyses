@@ -1,0 +1,146 @@
+---
+project:
+  type: website
+  output-dir: docs
+
+website:
+  title: "Tidy Tuesday: NYC Elevators"
+---
+
+## Tidy Tuesday: NYC Elevators 2022-12-06
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+```{r}
+library(tidyverse)
+tt <- tidytuesdayR::tt_load('2022-12-06')
+
+tt$elevators %>% 
+  janitor::clean_names() %>%
+  glimpse()
+
+elevators <- tt$elevators %>%
+  janitor::clean_names() %>%
+  rename_all(str_remove, "^dv_") %>%
+  mutate(
+    floor_to_raw = floor_to,
+    floor_to = as.numeric(floor_to_raw),
+    floor_to = if_else(floor_to > 90, NA, floor_to),
+    zip_code = na_if(zip_code, 0),
+    zip_code = str_sub(zip_code, 1, 5)) %>%
+  filter(longitude > -76)
+
+```
+
+```{r}
+elevators %>%
+  ggplot(aes(longitude, latitude, color = borough)) +
+  geom_point()
+
+elevators %>%
+  filter(!is.na(floor_to)) %>%
+  mutate(floor_to = as.numeric(floor_to)) %>%
+  ggplot(aes(floor_to)) + 
+  geom_histogram() +
+  scale_x_log10(labels = scales::comma_format(1))
+```
+
+```{r}
+by_building <- elevators %>%
+  arrange(desc(floor_to)) %>%
+  group_by(bin, house_number, street_name, zip_code, borough, longitude, latitude) %>%
+  summarize(
+    max_floor = na_if(max(floor_to, na.rm = T), -Inf),
+    n_elevators = n(),
+    latitude = mean(latitude, na.rm = T),
+    longitude = mean(longitude, na.rm = T),
+    .groups = "drop") %>%
+  arrange(desc(max_floor)) 
+
+g <- by_building %>%
+  filter(!is.na(max_floor)) %>%
+  arrange(max_floor) %>%
+  ggplot(aes(longitude, latitude, color = max_floor)) +
+  geom_point() +
+  # scale_color_continuous(trans = "log10")
+  scale_color_gradient2(
+    trans = "log10",
+    low = "blue",
+    high = "red",
+    midpoint = log10(10)
+  ) + 
+  ggthemes::theme_map() + 
+  labs(title = "Height of NYC buildings by elevator floor")
+
+g
+
+```
+
+```{r}
+
+library(rayshader)
+plot_gg(g)
+```
+
+```{r}
+library(sf)
+
+zip_codes <- read_sf("data/Modified Zip Code Tabulation Areas (MODZCTA)_20250310")
+
+by_zip_code <- by_building %>%
+ filter(!is.na(zip_code)) %>%
+ group_by(zip_code, borough) %>%
+ summarize(n_buildings = n(),
+           geom_mean_height = exp(mean(log(max_floor), na.rm = T)),
+           tallest_building = max(max_floor, na.rm = T),
+           .groups = "drop") %>%
+ filter(n_buildings >= 20) %>%
+ arrange(desc(geom_mean_height))
+
+
+
+joined_zip_codes <- zip_codes %>%
+ left_join(by_zip_code, by = c("modzcta" = "zip_code")) %>%
+ mutate(
+   # population_density = POPULATION / AREA,
+   elevator_building_density = n_buildings / pop_est)
+
+joined_zip_codes %>%
+ ggplot(aes(fill = geom_mean_height)) +
+ geom_sf() +
+ scale_fill_gradient2(low = "blue",
+                     high = "red",
+                     midpoint = log10(6),
+                     trans = "log10") +
+ ggthemes::theme_map() +
+ coord_sf(datum = NA) +
+ labs(fill = "Average (geometric) height of buildings with elevators") +
+ theme(legend.position = "top")
+
+```
+
+```{r}
+
+by_building %>%
+  filter(!is.na(borough)) %>%
+  ggplot(aes(max_floor, borough)) +
+  geom_boxplot() + 
+  scale_x_log10()
+
+by_building %>%
+  filter(!is.na(borough)) %>%
+  ggplot(aes(max_floor, borough)) +
+  geom_violin() + 
+  scale_x_log10()
+```
+
+```{r}
+
+elevators %>%
+ mutate(floor_from = as.numeric(floor_from)) %>%
+ ggplot(aes(floor_to - floor_from, parse_number(speed_fpm))) +
+ geom_point() +
+ scale_x_log10() +
+ scale_y_log10()
+
+```
