@@ -2,41 +2,92 @@
 project:
   type: website
   output-dir: docs
-
 website:
   title: "Tidy Tuesday: NYC Elevators"
+execute:
+  warning: false
+format: 
+  html:
+    self-contained: true
 ---
 
 ## Tidy Tuesday: NYC Elevators
 
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+This dataset comes from the Tidy Tuesday project from [December 06, 2022](https://github.com/rfordatascience/tidytuesday/tree/main/data/2022/2022-12-06).
 
+## Load data
+First step: let's load up the Tidyverse and inspect our data.
 ```{r}
+#| output: false
+
 library(tidyverse)
+
+theme_set(theme_light())
+
 tt <- tidytuesdayR::tt_load('2022-12-06')
 
+# What are we working with here?
 tt$elevators %>% 
   janitor::clean_names() %>%
   glimpse()
+```
 
-elevators <- tt$elevators %>%
+## Inspect data
+
+We've got a few data cleaning tasks: 
+
+```{r}
+tt$elevators %>%
   janitor::clean_names() %>%
-  rename_all(str_remove, "^dv_") %>%
-  mutate(
-    floor_to_raw = floor_to,
-    floor_to = as.numeric(floor_to_raw),
-    floor_to = if_else(floor_to > 90, NA, floor_to),
-    zip_code = na_if(zip_code, 0),
-    zip_code = str_sub(zip_code, 1, 5)) %>%
-  filter(longitude > -76)
-
+  count(zip_code, sort = T)
 ```
 
 ```{r}
-elevators %>%
-  ggplot(aes(longitude, latitude, color = borough)) +
-  geom_point()
+tt$elevators %>%
+  janitor::clean_names() %>%
+  filter(str_detect(dv_floor_to, "\\D")) %>%
+  count(dv_floor_to, sort = T)
+```
 
+```{r}
+tt$elevators %>%
+  janitor::clean_names() %>%
+  filter(!str_detect(dv_floor_to, "\\D")) %>%
+  count(dv_floor_to) %>%
+  arrange(desc(dv_floor_to)) 
+```
+
+```{r}
+tt$elevators %>%
+  janitor::clean_names() %>%
+  ggplot(aes(longitude, latitude, color = borough)) + 
+  geom_point() + 
+  labs(title = "NYC Elevator Locations")
+```
+
+## Clean data
+
+I'm gullible, but not that gullible: there shouldn't be elevators that are 912 stories tall or in the middle of the ocean. Let's clean this up.
+```{r}
+elevators <- tt$elevators %>%
+  janitor::clean_names() %>% # Make column names snake_case
+  rename_all(str_remove, "^dv_") %>% # Remove the "DV_" that starts many column names
+  mutate(
+    floor_to_raw = floor_to,
+    # Force convert to number, introducing NAs
+    floor_to = as.numeric(floor_to_raw), 
+    # Remove bad datapoints with absurdly high floors
+    floor_to = if_else(floor_to > 90, NA, floor_to), 
+    # create explicit missing data for missing zipcodes
+    zip_code = na_if(zip_code, 0), 
+    # Fix incorrectly formatted zips
+    zip_code = str_sub(zip_code, 1, 5)) %>% 
+  # Exclude a geographic outlier
+  filter(longitude > -76) 
+```
+
+Looking at our cleaned data, how tall are these elevators?
+```{r}
 elevators %>%
   filter(!is.na(floor_to)) %>%
   mutate(floor_to = as.numeric(floor_to)) %>%
@@ -45,6 +96,8 @@ elevators %>%
   scale_x_log10(labels = scales::comma_format(1))
 ```
 
+## Building heights
+Now let's aggregate by building
 ```{r}
 by_building <- elevators %>%
   arrange(desc(floor_to)) %>%
@@ -62,7 +115,6 @@ g <- by_building %>%
   arrange(max_floor) %>%
   ggplot(aes(longitude, latitude, color = max_floor)) +
   geom_point() +
-  # scale_color_continuous(trans = "log10")
   scale_color_gradient2(
     trans = "log10",
     low = "blue",
@@ -70,18 +122,40 @@ g <- by_building %>%
     midpoint = log10(10)
   ) + 
   ggthemes::theme_map() + 
-  labs(title = "Height of NYC buildings by elevator floor")
+  theme(
+    legend.position = "inside",
+    legend.position.inside = c(0.05, 0.75)) +
+  labs(
+    title = "Height of NYC elevators",
+    color = "Max floor")
 
 g
 
 ```
 
+Let's make this 3D!
 ```{r}
+#| webgl: true
+#| out.width: "100%"
+#| out.height: "600px"
+#| column: screen-inset
+#| fig.keep: "all"
 
 library(rayshader)
-plot_gg(g)
+library(rgl)
+
+plot_gg(
+  g, 
+  multicore = T, # Use more cores for faster rendering
+  width = 6,     # Increase this (inches) for higher resolution
+  height = 6,    # Increase this (inches) for higher resolution
+  scale = 400    # Increase this for more pronounced elevation scaling
+)
+rglwidget()
 ```
 
+## Elevator heights by zip code
+Join in zip code data to explore elevator heights by zip
 ```{r}
 library(sf)
 
@@ -90,43 +164,54 @@ zip_codes <- read_sf("data/Modified Zip Code Tabulation Areas (MODZCTA)_20250310
 by_zip_code <- by_building %>%
  filter(!is.na(zip_code)) %>%
  group_by(zip_code, borough) %>%
- summarize(n_buildings = n(),
-           geom_mean_height = exp(mean(log(max_floor), na.rm = T)),
-           tallest_building = max(max_floor, na.rm = T),
-           .groups = "drop") %>%
+ summarize(
+   n_buildings = n(),
+   # geometric mean is a better measure of central tendency 
+   #  because the elevator heights are log-normal
+   geom_mean_height = exp(mean(log(max_floor), na.rm = T)),
+   tallest_building = max(max_floor, na.rm = T),
+   .groups = "drop") %>%
  filter(n_buildings >= 20) %>%
  arrange(desc(geom_mean_height))
 
-
-
 joined_zip_codes <- zip_codes %>%
- left_join(by_zip_code, by = c("modzcta" = "zip_code")) %>%
- mutate(
-   # population_density = POPULATION / AREA,
-   elevator_building_density = n_buildings / pop_est)
+ left_join(by_zip_code, by = c("modzcta" = "zip_code"))
+ # mutate(
+ #   elevator_building_density = n_buildings / pop_est)
 
 joined_zip_codes %>%
  ggplot(aes(fill = geom_mean_height)) +
  geom_sf() +
- scale_fill_gradient2(low = "blue",
-                     high = "red",
-                     midpoint = log10(6),
-                     trans = "log10") +
+ scale_fill_gradient2(
+   low = "blue",
+   high = "red",
+   midpoint = log10(6),
+   trans = "log10") +
  ggthemes::theme_map() +
  coord_sf(datum = NA) +
- labs(fill = "Average (geometric) height of buildings with elevators") +
- theme(legend.position = "top")
+  theme(
+    legend.position = "inside",
+    legend.position.inside = c(0.05, 0.7)) +
+ labs(
+   title = "Tallest zip codes in NYC",
+   fill = "Average (geometric) height of elevators") 
 
 ```
 
-```{r}
+## Elevator heights by borough
 
+How do elevator heights vary by borough?
+```{r}
 by_building %>%
   filter(!is.na(borough)) %>%
   ggplot(aes(max_floor, borough)) +
   geom_boxplot() + 
   scale_x_log10()
+```
 
+
+And for folks less familiar with boxplots, here is the same data presented as densities:
+```{r}
 by_building %>%
   filter(!is.na(borough)) %>%
   ggplot(aes(max_floor, borough)) +
@@ -134,13 +219,19 @@ by_building %>%
   scale_x_log10()
 ```
 
+## Elevator speed
 ```{r}
-
 elevators %>%
- mutate(floor_from = as.numeric(floor_from)) %>%
- ggplot(aes(floor_to - floor_from, parse_number(speed_fpm))) +
- geom_point() +
- scale_x_log10() +
- scale_y_log10()
-
+  mutate(floor_from = as.numeric(floor_from)) %>%
+  ggplot(aes(floor_to - floor_from, parse_number(speed_fpm))) +
+  geom_point() +
+  scale_x_log10() +
+  scale_y_log10() +
+  labs(
+    title = "Elevator heights vs speed",
+    x = "Elevator height (floors)",
+    y = "Speed (fpm)")
 ```
+
+You can see elevator speeds appear to be correlated with height. In a future analysis, we could find the elevators that are unusual, either unnecessarily fast or too slow given their height.
+
