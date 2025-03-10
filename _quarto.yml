@@ -3,7 +3,7 @@ project:
   output-dir: docs
 
 website:
-  title: "Analysis Portfolio"
+  title: "Data Analysis Portfolio"
   # navbar:
   #   left:
   #     - href: index.qmd
@@ -13,11 +13,18 @@ website:
   sidebar:
     style: "docked"
     contents:
+      - href: index.qmd
+        text: Home
       - section: "Analyses"
         contents:
-          - index.qmd
           - tidy_tuesday_nyc_elevators/tidy_tuesday_nyc_elevators.qmd
       - section: "More from Anthony"
         contents:
           - href: https://anthony.computer
             text: anthony.computer
+          - href: https://www.linkedin.com/in/awbaker1/
+            text: LinkedIn
+          - href: https://anthony.computer/BakerResume_v19.2.pdf
+            text: Resume
+          - href: "mailto:anthonywbaker1@gmail.com"
+            text: Contact

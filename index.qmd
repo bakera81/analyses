@@ -1,9 +1,10 @@
 ---
-title: "Home"
+title: "Data Analysis Portfolio"
 format: html
 editor: visual
 ---
 
+Anthony W. Baker
 
 
 ## Featured
