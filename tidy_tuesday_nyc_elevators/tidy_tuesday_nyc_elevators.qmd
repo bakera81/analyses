@@ -6,6 +6,7 @@ website:
   title: "Tidy Tuesday: NYC Elevators"
 execute:
   warning: false
+  freeze: true # freezes computation, caches results to speed up re-renders
 format: 
   html:
     self-contained: true
@@ -140,6 +141,7 @@ Let's make this 3D!
 #| out.height: "600px"
 #| column: screen-inset
 #| fig.keep: "all"
+#| cache: true
 
 library(rayshader)
 library(rgl)
@@ -147,8 +149,8 @@ library(rgl)
 plot_gg(
   g, 
   multicore = T, # Use more cores for faster rendering
-  width = 6,     # Increase this (inches) for higher resolution
-  height = 6,    # Increase this (inches) for higher resolution
+  # width = 6,     # Increase this (inches) for higher resolution
+  # height = 6,    # Increase this (inches) for higher resolution
   scale = 400    # Increase this for more pronounced elevation scaling
 )
 rglwidget()
