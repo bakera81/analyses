@@ -1,0 +1,40 @@
+---
+title: "Recreating Septa Transit Timetables in R"
+format: html
+editor: visual
+---
+
+```{r setup}
+library(tidyverse)
+library(gt)
+
+```
+
+```{r read_data}
+stops <- 
+  read_csv("septa_transit_times/chw-stops.csv")
+
+times <-
+  read_csv("septa_transit_times/times.csv")
+
+stop_times <- 
+  times %>%
+  left_join(stops, by = "stop_name")
+
+```
+
+```{r}
+stop_times %>%
+  mutate(`8210` = as.difftime(`8210`), format = "%I:%M %p")) %>%
+  glimpse()
+
+stop_times %>%
+  gt() %>%
+  cols_hide(c(
+    "stop_url", "zone_id", "stop_desc", "stop_lat", "stop_lon", "stop_id")) %>%
+  fmt(
+    columns = matches("^[0-9]{4}$"), 
+    fns = ~format(., "%I:%M %p"))
+
+
+```
