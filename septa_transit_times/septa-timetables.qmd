@@ -1,0 +1,92 @@
+---
+title: "Recreating Septa Transit Timetables in R"
+format: html
+editor: visual
+---
+
+```{r setup}
+library(tidyverse)
+library(gt)
+library(hms)
+```
+
+```{r read_data}
+stops <- 
+  read_csv("chw-stops.csv")
+
+times <-
+  read_csv("times.csv")
+
+stop_times <- 
+  times %>%
+  left_join(stops, by = "stop_name")
+
+```
+
+```{r great_table_time}
+stop_times %>%
+  gt() %>%
+  cols_hide(c(
+    "stop_url", "zone_id", "stop_desc", "stop_lat", "stop_lon", "stop_id")) %>%
+  fmt(
+    columns = matches("^[0-9]{4}$"),
+    fns = ~format(., "%I:%M %p")) %>%
+  fmt(
+    columns = starts_with("service_"),
+    fns = ~if_else(as.logical(.), "&check;", "")) %>%
+  cols_label(
+    stop_name = "Stations",
+    service_access = "A",
+    service_cash = "C",
+    service_park = "P",
+    fare_zone = html("Fare<br>Zone")) %>%
+  tab_spanner(
+    columns = starts_with("service_"),
+    label = "Services") %>%
+  tab_spanner(
+    columns = matches("^[0-9]{4}$"),
+    label = "Train Number") %>%
+  cols_move_to_start("fare_zone") %>%
+  cols_move_to_start(starts_with("service_")) %>%
+  cols_width(
+    starts_with("service_") ~ px(20),
+    starts_with("8") ~ px(80)) %>%
+  opt_row_striping(row_striping = T) %>%
+  cols_align(
+    columns = "fare_zone",
+    align = "center") %>%
+  cols_align(
+    columns = matches("^[0-9]{4}$"),
+    align = "right") %>%
+  tab_style(
+    locations = cells_body(rows = c(11:13)),
+    style = list(
+      cell_fill(color = "black"), 
+      cell_text(color = "white"),
+      cell_borders(
+        sides = c("top", "bottom"),
+        style = "hidden"))) %>%
+  tab_style(
+    locations = cells_body(
+      columns = !matches("^[0-9]{4}$"),
+      rows = c(11:13)),
+    style = css(
+      border_top = "none !important;",
+      border_bottom = "none !important;",
+      border_right = "solid white 2px !important;",
+      color = "white !important;")) %>%
+  tab_style(
+    locations = cells_body(
+      columns = !matches("^[0-9]{4}$"),
+      rows = c(1:10, 14)),
+    style = cell_borders(
+      sides = "right",
+      color = "black",
+      style = "solid",
+      weight = px(2))) %>%
+  tab_options(
+    row.striping.background_color = "#A9A9A9") %>%
+  opt_table_font(font = google_font("IBM Plex Sans"))
+  
+
+```
