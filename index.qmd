@@ -16,11 +16,9 @@ Exploring the tallest and fastest elevators in NYC.
 :::
 
 ::: g-col-4
-![](https://via.placeholder.com/100)
+[**SEPTA Transit Timetables**](septa_transit_times/septa-timetables.qmd)
 
-[**Page 2**](page2.qmd)
-
-Overview of the second topic.
+Demo using Great Tables to style a presentation-worthy table of transit data.
 :::
 
 ::: g-col-4
