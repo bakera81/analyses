@@ -1,7 +1,10 @@
 ---
 title: "Recreating Septa Transit Timetables in R"
-format: html
+format: 
+  html:
+    html-table-processing: none
 editor: visual
+
 ---
 
 ```{r setup}
@@ -24,13 +27,16 @@ stop_times <-
 ```
 
 ```{r great_table_time}
+#| html-table-processing: none
+
 stop_times %>%
+  mutate(across(matches("^[0-9]{4}$"), as.POSIXct)) %>%
   gt() %>%
   cols_hide(c(
     "stop_url", "zone_id", "stop_desc", "stop_lat", "stop_lon", "stop_id")) %>%
-  fmt(
+  fmt_time(
     columns = matches("^[0-9]{4}$"),
-    fns = ~format(., "%I:%M %p")) %>%
+    time_style = "h_m_p") %>%
   fmt(
     columns = starts_with("service_"),
     fns = ~if_else(as.logical(.), "&check;", "")) %>%

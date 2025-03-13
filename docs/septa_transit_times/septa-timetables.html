@@ -283,87 +283,88 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
 </div>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>stop_times <span class="sc">%&gt;%</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">gt</span>() <span class="sc">%&gt;%</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cols_hide</span>(<span class="fu">c</span>(</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"stop_url"</span>, <span class="st">"zone_id"</span>, <span class="st">"stop_desc"</span>, <span class="st">"stop_lat"</span>, <span class="st">"stop_lon"</span>, <span class="st">"stop_id"</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fmt</span>(</span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">columns =</span> <span class="fu">matches</span>(<span class="st">"^[0-9]{4}$"</span>),</span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">fns =</span> <span class="sc">~</span><span class="fu">format</span>(., <span class="st">"%I:%M %p"</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fmt</span>(</span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">columns =</span> <span class="fu">starts_with</span>(<span class="st">"service_"</span>),</span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">fns =</span> <span class="sc">~</span><span class="fu">if_else</span>(<span class="fu">as.logical</span>(.), <span class="st">"&amp;check;"</span>, <span class="st">""</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cols_label</span>(</span>
-<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">stop_name =</span> <span class="st">"Stations"</span>,</span>
-<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">service_access =</span> <span class="st">"A"</span>,</span>
-<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">service_cash =</span> <span class="st">"C"</span>,</span>
-<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">service_park =</span> <span class="st">"P"</span>,</span>
-<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">fare_zone =</span> <span class="fu">html</span>(<span class="st">"Fare&lt;br&gt;Zone"</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tab_spanner</span>(</span>
-<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">columns =</span> <span class="fu">starts_with</span>(<span class="st">"service_"</span>),</span>
-<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">label =</span> <span class="st">"Services"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tab_spanner</span>(</span>
-<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">columns =</span> <span class="fu">matches</span>(<span class="st">"^[0-9]{4}$"</span>),</span>
-<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">label =</span> <span class="st">"Train Number"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cols_move_to_start</span>(<span class="st">"fare_zone"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cols_move_to_start</span>(<span class="fu">starts_with</span>(<span class="st">"service_"</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cols_width</span>(</span>
-<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>    <span class="fu">starts_with</span>(<span class="st">"service_"</span>) <span class="sc">~</span> <span class="fu">px</span>(<span class="dv">20</span>),</span>
-<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a>    <span class="fu">starts_with</span>(<span class="st">"8"</span>) <span class="sc">~</span> <span class="fu">px</span>(<span class="dv">80</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">opt_row_striping</span>(<span class="at">row_striping =</span> T) <span class="sc">%&gt;%</span></span>
-<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cols_align</span>(</span>
-<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a>    <span class="at">columns =</span> <span class="st">"fare_zone"</span>,</span>
-<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a>    <span class="at">align =</span> <span class="st">"center"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cols_align</span>(</span>
-<span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a>    <span class="at">columns =</span> <span class="fu">matches</span>(<span class="st">"^[0-9]{4}$"</span>),</span>
-<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a>    <span class="at">align =</span> <span class="st">"right"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb10-35"><a href="#cb10-35" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tab_style</span>(</span>
-<span id="cb10-36"><a href="#cb10-36" aria-hidden="true" tabindex="-1"></a>    <span class="at">locations =</span> <span class="fu">cells_body</span>(<span class="at">rows =</span> <span class="fu">c</span>(<span class="dv">11</span><span class="sc">:</span><span class="dv">13</span>)),</span>
-<span id="cb10-37"><a href="#cb10-37" aria-hidden="true" tabindex="-1"></a>    <span class="at">style =</span> <span class="fu">list</span>(</span>
-<span id="cb10-38"><a href="#cb10-38" aria-hidden="true" tabindex="-1"></a>      <span class="fu">cell_fill</span>(<span class="at">color =</span> <span class="st">"black"</span>), </span>
-<span id="cb10-39"><a href="#cb10-39" aria-hidden="true" tabindex="-1"></a>      <span class="fu">cell_text</span>(<span class="at">color =</span> <span class="st">"white"</span>),</span>
-<span id="cb10-40"><a href="#cb10-40" aria-hidden="true" tabindex="-1"></a>      <span class="fu">cell_borders</span>(</span>
-<span id="cb10-41"><a href="#cb10-41" aria-hidden="true" tabindex="-1"></a>        <span class="at">sides =</span> <span class="fu">c</span>(<span class="st">"top"</span>, <span class="st">"bottom"</span>),</span>
-<span id="cb10-42"><a href="#cb10-42" aria-hidden="true" tabindex="-1"></a>        <span class="at">style =</span> <span class="st">"hidden"</span>))) <span class="sc">%&gt;%</span></span>
-<span id="cb10-43"><a href="#cb10-43" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tab_style</span>(</span>
-<span id="cb10-44"><a href="#cb10-44" aria-hidden="true" tabindex="-1"></a>    <span class="at">locations =</span> <span class="fu">cells_body</span>(</span>
-<span id="cb10-45"><a href="#cb10-45" aria-hidden="true" tabindex="-1"></a>      <span class="at">columns =</span> <span class="sc">!</span><span class="fu">matches</span>(<span class="st">"^[0-9]{4}$"</span>),</span>
-<span id="cb10-46"><a href="#cb10-46" aria-hidden="true" tabindex="-1"></a>      <span class="at">rows =</span> <span class="fu">c</span>(<span class="dv">11</span><span class="sc">:</span><span class="dv">13</span>)),</span>
-<span id="cb10-47"><a href="#cb10-47" aria-hidden="true" tabindex="-1"></a>    <span class="at">style =</span> <span class="fu">css</span>(</span>
-<span id="cb10-48"><a href="#cb10-48" aria-hidden="true" tabindex="-1"></a>      <span class="at">border_top =</span> <span class="st">"none !important;"</span>,</span>
-<span id="cb10-49"><a href="#cb10-49" aria-hidden="true" tabindex="-1"></a>      <span class="at">border_bottom =</span> <span class="st">"none !important;"</span>,</span>
-<span id="cb10-50"><a href="#cb10-50" aria-hidden="true" tabindex="-1"></a>      <span class="at">border_right =</span> <span class="st">"solid white 2px !important;"</span>,</span>
-<span id="cb10-51"><a href="#cb10-51" aria-hidden="true" tabindex="-1"></a>      <span class="at">color =</span> <span class="st">"white !important;"</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb10-52"><a href="#cb10-52" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tab_style</span>(</span>
-<span id="cb10-53"><a href="#cb10-53" aria-hidden="true" tabindex="-1"></a>    <span class="at">locations =</span> <span class="fu">cells_body</span>(</span>
-<span id="cb10-54"><a href="#cb10-54" aria-hidden="true" tabindex="-1"></a>      <span class="at">columns =</span> <span class="sc">!</span><span class="fu">matches</span>(<span class="st">"^[0-9]{4}$"</span>),</span>
-<span id="cb10-55"><a href="#cb10-55" aria-hidden="true" tabindex="-1"></a>      <span class="at">rows =</span> <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, <span class="dv">14</span>)),</span>
-<span id="cb10-56"><a href="#cb10-56" aria-hidden="true" tabindex="-1"></a>    <span class="at">style =</span> <span class="fu">cell_borders</span>(</span>
-<span id="cb10-57"><a href="#cb10-57" aria-hidden="true" tabindex="-1"></a>      <span class="at">sides =</span> <span class="st">"right"</span>,</span>
-<span id="cb10-58"><a href="#cb10-58" aria-hidden="true" tabindex="-1"></a>      <span class="at">color =</span> <span class="st">"black"</span>,</span>
-<span id="cb10-59"><a href="#cb10-59" aria-hidden="true" tabindex="-1"></a>      <span class="at">style =</span> <span class="st">"solid"</span>,</span>
-<span id="cb10-60"><a href="#cb10-60" aria-hidden="true" tabindex="-1"></a>      <span class="at">weight =</span> <span class="fu">px</span>(<span class="dv">2</span>))) <span class="sc">%&gt;%</span></span>
-<span id="cb10-61"><a href="#cb10-61" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tab_options</span>(</span>
-<span id="cb10-62"><a href="#cb10-62" aria-hidden="true" tabindex="-1"></a>    <span class="at">row.striping.background_color =</span> <span class="st">"#A9A9A9"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb10-63"><a href="#cb10-63" aria-hidden="true" tabindex="-1"></a>  <span class="fu">opt_table_font</span>(<span class="at">font =</span> <span class="fu">google_font</span>(<span class="st">"IBM Plex Sans"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output-display">
-<div id="milljutujn" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">matches</span>(<span class="st">"^[0-9]{4}$"</span>), as.POSIXct)) <span class="sc">%&gt;%</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">gt</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cols_hide</span>(<span class="fu">c</span>(</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">"stop_url"</span>, <span class="st">"zone_id"</span>, <span class="st">"stop_desc"</span>, <span class="st">"stop_lat"</span>, <span class="st">"stop_lon"</span>, <span class="st">"stop_id"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fmt_time</span>(</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">columns =</span> <span class="fu">matches</span>(<span class="st">"^[0-9]{4}$"</span>),</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">time_style =</span> <span class="st">"h_m_p"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fmt</span>(</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">columns =</span> <span class="fu">starts_with</span>(<span class="st">"service_"</span>),</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">fns =</span> <span class="sc">~</span><span class="fu">if_else</span>(<span class="fu">as.logical</span>(.), <span class="st">"&amp;check;"</span>, <span class="st">""</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cols_label</span>(</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">stop_name =</span> <span class="st">"Stations"</span>,</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">service_access =</span> <span class="st">"A"</span>,</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">service_cash =</span> <span class="st">"C"</span>,</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">service_park =</span> <span class="st">"P"</span>,</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">fare_zone =</span> <span class="fu">html</span>(<span class="st">"Fare&lt;br&gt;Zone"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tab_spanner</span>(</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">columns =</span> <span class="fu">starts_with</span>(<span class="st">"service_"</span>),</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">label =</span> <span class="st">"Services"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tab_spanner</span>(</span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">columns =</span> <span class="fu">matches</span>(<span class="st">"^[0-9]{4}$"</span>),</span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">label =</span> <span class="st">"Train Number"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cols_move_to_start</span>(<span class="st">"fare_zone"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cols_move_to_start</span>(<span class="fu">starts_with</span>(<span class="st">"service_"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cols_width</span>(</span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a>    <span class="fu">starts_with</span>(<span class="st">"service_"</span>) <span class="sc">~</span> <span class="fu">px</span>(<span class="dv">20</span>),</span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a>    <span class="fu">starts_with</span>(<span class="st">"8"</span>) <span class="sc">~</span> <span class="fu">px</span>(<span class="dv">80</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">opt_row_striping</span>(<span class="at">row_striping =</span> T) <span class="sc">%&gt;%</span></span>
+<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cols_align</span>(</span>
+<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a>    <span class="at">columns =</span> <span class="st">"fare_zone"</span>,</span>
+<span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a>    <span class="at">align =</span> <span class="st">"center"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cols_align</span>(</span>
+<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a>    <span class="at">columns =</span> <span class="fu">matches</span>(<span class="st">"^[0-9]{4}$"</span>),</span>
+<span id="cb10-35"><a href="#cb10-35" aria-hidden="true" tabindex="-1"></a>    <span class="at">align =</span> <span class="st">"right"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb10-36"><a href="#cb10-36" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tab_style</span>(</span>
+<span id="cb10-37"><a href="#cb10-37" aria-hidden="true" tabindex="-1"></a>    <span class="at">locations =</span> <span class="fu">cells_body</span>(<span class="at">rows =</span> <span class="fu">c</span>(<span class="dv">11</span><span class="sc">:</span><span class="dv">13</span>)),</span>
+<span id="cb10-38"><a href="#cb10-38" aria-hidden="true" tabindex="-1"></a>    <span class="at">style =</span> <span class="fu">list</span>(</span>
+<span id="cb10-39"><a href="#cb10-39" aria-hidden="true" tabindex="-1"></a>      <span class="fu">cell_fill</span>(<span class="at">color =</span> <span class="st">"black"</span>), </span>
+<span id="cb10-40"><a href="#cb10-40" aria-hidden="true" tabindex="-1"></a>      <span class="fu">cell_text</span>(<span class="at">color =</span> <span class="st">"white"</span>),</span>
+<span id="cb10-41"><a href="#cb10-41" aria-hidden="true" tabindex="-1"></a>      <span class="fu">cell_borders</span>(</span>
+<span id="cb10-42"><a href="#cb10-42" aria-hidden="true" tabindex="-1"></a>        <span class="at">sides =</span> <span class="fu">c</span>(<span class="st">"top"</span>, <span class="st">"bottom"</span>),</span>
+<span id="cb10-43"><a href="#cb10-43" aria-hidden="true" tabindex="-1"></a>        <span class="at">style =</span> <span class="st">"hidden"</span>))) <span class="sc">%&gt;%</span></span>
+<span id="cb10-44"><a href="#cb10-44" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tab_style</span>(</span>
+<span id="cb10-45"><a href="#cb10-45" aria-hidden="true" tabindex="-1"></a>    <span class="at">locations =</span> <span class="fu">cells_body</span>(</span>
+<span id="cb10-46"><a href="#cb10-46" aria-hidden="true" tabindex="-1"></a>      <span class="at">columns =</span> <span class="sc">!</span><span class="fu">matches</span>(<span class="st">"^[0-9]{4}$"</span>),</span>
+<span id="cb10-47"><a href="#cb10-47" aria-hidden="true" tabindex="-1"></a>      <span class="at">rows =</span> <span class="fu">c</span>(<span class="dv">11</span><span class="sc">:</span><span class="dv">13</span>)),</span>
+<span id="cb10-48"><a href="#cb10-48" aria-hidden="true" tabindex="-1"></a>    <span class="at">style =</span> <span class="fu">css</span>(</span>
+<span id="cb10-49"><a href="#cb10-49" aria-hidden="true" tabindex="-1"></a>      <span class="at">border_top =</span> <span class="st">"none !important;"</span>,</span>
+<span id="cb10-50"><a href="#cb10-50" aria-hidden="true" tabindex="-1"></a>      <span class="at">border_bottom =</span> <span class="st">"none !important;"</span>,</span>
+<span id="cb10-51"><a href="#cb10-51" aria-hidden="true" tabindex="-1"></a>      <span class="at">border_right =</span> <span class="st">"solid white 2px !important;"</span>,</span>
+<span id="cb10-52"><a href="#cb10-52" aria-hidden="true" tabindex="-1"></a>      <span class="at">color =</span> <span class="st">"white !important;"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb10-53"><a href="#cb10-53" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tab_style</span>(</span>
+<span id="cb10-54"><a href="#cb10-54" aria-hidden="true" tabindex="-1"></a>    <span class="at">locations =</span> <span class="fu">cells_body</span>(</span>
+<span id="cb10-55"><a href="#cb10-55" aria-hidden="true" tabindex="-1"></a>      <span class="at">columns =</span> <span class="sc">!</span><span class="fu">matches</span>(<span class="st">"^[0-9]{4}$"</span>),</span>
+<span id="cb10-56"><a href="#cb10-56" aria-hidden="true" tabindex="-1"></a>      <span class="at">rows =</span> <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, <span class="dv">14</span>)),</span>
+<span id="cb10-57"><a href="#cb10-57" aria-hidden="true" tabindex="-1"></a>    <span class="at">style =</span> <span class="fu">cell_borders</span>(</span>
+<span id="cb10-58"><a href="#cb10-58" aria-hidden="true" tabindex="-1"></a>      <span class="at">sides =</span> <span class="st">"right"</span>,</span>
+<span id="cb10-59"><a href="#cb10-59" aria-hidden="true" tabindex="-1"></a>      <span class="at">color =</span> <span class="st">"black"</span>,</span>
+<span id="cb10-60"><a href="#cb10-60" aria-hidden="true" tabindex="-1"></a>      <span class="at">style =</span> <span class="st">"solid"</span>,</span>
+<span id="cb10-61"><a href="#cb10-61" aria-hidden="true" tabindex="-1"></a>      <span class="at">weight =</span> <span class="fu">px</span>(<span class="dv">2</span>))) <span class="sc">%&gt;%</span></span>
+<span id="cb10-62"><a href="#cb10-62" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tab_options</span>(</span>
+<span id="cb10-63"><a href="#cb10-63" aria-hidden="true" tabindex="-1"></a>    <span class="at">row.striping.background_color =</span> <span class="st">"#A9A9A9"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb10-64"><a href="#cb10-64" aria-hidden="true" tabindex="-1"></a>  <span class="fu">opt_table_font</span>(<span class="at">font =</span> <span class="fu">google_font</span>(<span class="st">"IBM Plex Sans"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display" data-html-table-processing="none">
+<div id="hakrtcblgx" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
 <style>@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
-#milljutujn table {
+#hakrtcblgx table {
   font-family: 'IBM Plex Sans', system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#milljutujn thead, #milljutujn tbody, #milljutujn tfoot, #milljutujn tr, #milljutujn td, #milljutujn th {
+#hakrtcblgx thead, #hakrtcblgx tbody, #hakrtcblgx tfoot, #hakrtcblgx tr, #hakrtcblgx td, #hakrtcblgx th {
   border-style: none;
 }
 
-#milljutujn p {
+#hakrtcblgx p {
   margin: 0;
   padding: 0;
 }
 
-#milljutujn .gt_table {
+#hakrtcblgx .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -389,12 +390,12 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   border-left-color: #D3D3D3;
 }
 
-#milljutujn .gt_caption {
+#hakrtcblgx .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#milljutujn .gt_title {
+#hakrtcblgx .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -406,7 +407,7 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   border-bottom-width: 0;
 }
 
-#milljutujn .gt_subtitle {
+#hakrtcblgx .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -418,7 +419,7 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   border-top-width: 0;
 }
 
-#milljutujn .gt_heading {
+#hakrtcblgx .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -430,13 +431,13 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   border-right-color: #D3D3D3;
 }
 
-#milljutujn .gt_bottom_border {
+#hakrtcblgx .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#milljutujn .gt_col_headings {
+#hakrtcblgx .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -451,7 +452,7 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   border-right-color: #D3D3D3;
 }
 
-#milljutujn .gt_col_heading {
+#hakrtcblgx .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -471,7 +472,7 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   overflow-x: hidden;
 }
 
-#milljutujn .gt_column_spanner_outer {
+#hakrtcblgx .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -483,15 +484,15 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   padding-right: 4px;
 }
 
-#milljutujn .gt_column_spanner_outer:first-child {
+#hakrtcblgx .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#milljutujn .gt_column_spanner_outer:last-child {
+#hakrtcblgx .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#milljutujn .gt_column_spanner {
+#hakrtcblgx .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -503,11 +504,11 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   width: 100%;
 }
 
-#milljutujn .gt_spanner_row {
+#hakrtcblgx .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#milljutujn .gt_group_heading {
+#hakrtcblgx .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -533,7 +534,7 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   text-align: left;
 }
 
-#milljutujn .gt_empty_group_heading {
+#hakrtcblgx .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -548,15 +549,15 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   vertical-align: middle;
 }
 
-#milljutujn .gt_from_md > :first-child {
+#hakrtcblgx .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#milljutujn .gt_from_md > :last-child {
+#hakrtcblgx .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#milljutujn .gt_row {
+#hakrtcblgx .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -575,7 +576,7 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   overflow-x: hidden;
 }
 
-#milljutujn .gt_stub {
+#hakrtcblgx .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -588,7 +589,7 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   padding-right: 5px;
 }
 
-#milljutujn .gt_stub_row_group {
+#hakrtcblgx .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -602,15 +603,15 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   vertical-align: top;
 }
 
-#milljutujn .gt_row_group_first td {
+#hakrtcblgx .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#milljutujn .gt_row_group_first th {
+#hakrtcblgx .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#milljutujn .gt_summary_row {
+#hakrtcblgx .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -620,16 +621,16 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   padding-right: 5px;
 }
 
-#milljutujn .gt_first_summary_row {
+#hakrtcblgx .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#milljutujn .gt_first_summary_row.thick {
+#hakrtcblgx .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#milljutujn .gt_last_summary_row {
+#hakrtcblgx .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -639,7 +640,7 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   border-bottom-color: #D3D3D3;
 }
 
-#milljutujn .gt_grand_summary_row {
+#hakrtcblgx .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -649,7 +650,7 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   padding-right: 5px;
 }
 
-#milljutujn .gt_first_grand_summary_row {
+#hakrtcblgx .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -659,7 +660,7 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   border-top-color: #D3D3D3;
 }
 
-#milljutujn .gt_last_grand_summary_row_top {
+#hakrtcblgx .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -669,11 +670,11 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   border-bottom-color: #D3D3D3;
 }
 
-#milljutujn .gt_striped {
+#hakrtcblgx .gt_striped {
   background-color: #A9A9A9;
 }
 
-#milljutujn .gt_table_body {
+#hakrtcblgx .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -682,7 +683,7 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   border-bottom-color: #D3D3D3;
 }
 
-#milljutujn .gt_footnotes {
+#hakrtcblgx .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -696,7 +697,7 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   border-right-color: #D3D3D3;
 }
 
-#milljutujn .gt_footnote {
+#hakrtcblgx .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -705,7 +706,7 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   padding-right: 5px;
 }
 
-#milljutujn .gt_sourcenotes {
+#hakrtcblgx .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -719,7 +720,7 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   border-right-color: #D3D3D3;
 }
 
-#milljutujn .gt_sourcenote {
+#hakrtcblgx .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -727,317 +728,303 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   padding-right: 5px;
 }
 
-#milljutujn .gt_left {
+#hakrtcblgx .gt_left {
   text-align: left;
 }
 
-#milljutujn .gt_center {
+#hakrtcblgx .gt_center {
   text-align: center;
 }
 
-#milljutujn .gt_right {
+#hakrtcblgx .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#milljutujn .gt_font_normal {
+#hakrtcblgx .gt_font_normal {
   font-weight: normal;
 }
 
-#milljutujn .gt_font_bold {
+#hakrtcblgx .gt_font_bold {
   font-weight: bold;
 }
 
-#milljutujn .gt_font_italic {
+#hakrtcblgx .gt_font_italic {
   font-style: italic;
 }
 
-#milljutujn .gt_super {
+#hakrtcblgx .gt_super {
   font-size: 65%;
 }
 
-#milljutujn .gt_footnote_marks {
+#hakrtcblgx .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#milljutujn .gt_asterisk {
+#hakrtcblgx .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#milljutujn .gt_indent_1 {
+#hakrtcblgx .gt_indent_1 {
   text-indent: 5px;
 }
 
-#milljutujn .gt_indent_2 {
+#hakrtcblgx .gt_indent_2 {
   text-indent: 10px;
 }
 
-#milljutujn .gt_indent_3 {
+#hakrtcblgx .gt_indent_3 {
   text-indent: 15px;
 }
 
-#milljutujn .gt_indent_4 {
+#hakrtcblgx .gt_indent_4 {
   text-indent: 20px;
 }
 
-#milljutujn .gt_indent_5 {
+#hakrtcblgx .gt_indent_5 {
   text-indent: 25px;
 }
 
-#milljutujn .katex-display {
+#hakrtcblgx .katex-display {
   display: inline-flex !important;
   margin-bottom: 0.75em !important;
 }
 
-#milljutujn div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#hakrtcblgx div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
   height: 0px !important;
 }
 </style>
-
-<table class="gt_table caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
-<thead>
-<tr class="header gt_col_headings gt_spanner_row">
-<th colspan="3" id="Services" class="gt_center gt_columns_top_border gt_column_spanner_outer" data-quarto-table-cell-role="th" scope="colgroup"><div class="gt_column_spanner">
-Services
-</div></th>
-<th rowspan="2" id="fare_zone" class="gt_col_heading gt_columns_bottom_border gt_center" data-quarto-table-cell-role="th" scope="col">Fare<br>
-Zone</th>
-<th rowspan="2" id="stop_name" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">Stations</th>
-<th colspan="8" id="Train Number" class="gt_center gt_columns_top_border gt_column_spanner_outer" data-quarto-table-cell-role="th" scope="colgroup"><div class="gt_column_spanner">
-Train Number
-</div></th>
-</tr>
-<tr class="odd gt_col_headings">
-<th id="service_access" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">A</th>
-<th id="service_cash" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">C</th>
-<th id="service_park" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">P</th>
-<th id="a8210" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">8210</th>
-<th id="a8242" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">8242</th>
-<th id="a8318" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">8318</th>
-<th id="a8322" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">8322</th>
-<th id="a8338" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">8338</th>
-<th id="a8716" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">8716</th>
-<th id="a8750" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">8750</th>
-<th id="a8756" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">8756</th>
-</tr>
-</thead>
-<tbody class="gt_table_body">
-<tr class="odd">
-<td class="gt_row gt_right" headers="service_access" style="border-right-width: 2px; border-right-style: solid; border-right-color: black"></td>
-<td class="gt_row gt_right" headers="service_cash" style="border-right-width: 2px; border-right-style: solid; border-right-color: black"></td>
-<td class="gt_row gt_right" headers="service_park" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">✓</td>
-<td class="gt_row gt_center" headers="fare_zone" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">2</td>
-<td class="gt_row gt_left" headers="stop_name" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">Chestnut Hill West</td>
-<td class="gt_row gt_right" headers="8210">06:51:00</td>
-<td class="gt_row gt_right" headers="8242">14:49:00</td>
-<td class="gt_row gt_right" headers="8318">08:49:00</td>
-<td class="gt_row gt_right" headers="8322">09:49:00</td>
-<td class="gt_row gt_right" headers="8338">13:52:00</td>
-<td class="gt_row gt_right" headers="8716">08:08:00</td>
-<td class="gt_row gt_right" headers="8750">16:48:00</td>
-<td class="gt_row gt_right" headers="8756">18:20:00</td>
-</tr>
-<tr class="even">
-<td class="gt_row gt_right gt_striped" headers="service_access" style="border-right-width: 2px; border-right-style: solid; border-right-color: black"></td>
-<td class="gt_row gt_right gt_striped" headers="service_cash" style="border-right-width: 2px; border-right-style: solid; border-right-color: black"></td>
-<td class="gt_row gt_right gt_striped" headers="service_park" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">✓</td>
-<td class="gt_row gt_center gt_striped" headers="fare_zone" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">2</td>
-<td class="gt_row gt_left gt_striped" headers="stop_name" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">Highland</td>
-<td class="gt_row gt_right gt_striped" headers="8210">06:52:00</td>
-<td class="gt_row gt_right gt_striped" headers="8242">14:50:00</td>
-<td class="gt_row gt_right gt_striped" headers="8318">08:50:00</td>
-<td class="gt_row gt_right gt_striped" headers="8322">09:50:00</td>
-<td class="gt_row gt_right gt_striped" headers="8338">13:53:00</td>
-<td class="gt_row gt_right gt_striped" headers="8716">08:09:00</td>
-<td class="gt_row gt_right gt_striped" headers="8750">16:49:00</td>
-<td class="gt_row gt_right gt_striped" headers="8756">18:21:00</td>
-</tr>
-<tr class="odd">
-<td class="gt_row gt_right" headers="service_access" style="border-right-width: 2px; border-right-style: solid; border-right-color: black"></td>
-<td class="gt_row gt_right" headers="service_cash" style="border-right-width: 2px; border-right-style: solid; border-right-color: black"></td>
-<td class="gt_row gt_right" headers="service_park" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">✓</td>
-<td class="gt_row gt_center" headers="fare_zone" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">1</td>
-<td class="gt_row gt_left" headers="stop_name" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">St. Martins</td>
-<td class="gt_row gt_right" headers="8210">06:54:00</td>
-<td class="gt_row gt_right" headers="8242">14:52:00</td>
-<td class="gt_row gt_right" headers="8318">08:52:00</td>
-<td class="gt_row gt_right" headers="8322">09:52:00</td>
-<td class="gt_row gt_right" headers="8338">13:55:00</td>
-<td class="gt_row gt_right" headers="8716">08:11:00</td>
-<td class="gt_row gt_right" headers="8750">16:51:00</td>
-<td class="gt_row gt_right" headers="8756">18:23:00</td>
-</tr>
-<tr class="even">
-<td class="gt_row gt_right gt_striped" headers="service_access" style="border-right-width: 2px; border-right-style: solid; border-right-color: black"></td>
-<td class="gt_row gt_right gt_striped" headers="service_cash" style="border-right-width: 2px; border-right-style: solid; border-right-color: black"></td>
-<td class="gt_row gt_right gt_striped" headers="service_park" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">✓</td>
-<td class="gt_row gt_center gt_striped" headers="fare_zone" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">1</td>
-<td class="gt_row gt_left gt_striped" headers="stop_name" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">Richard Allen Lane</td>
-<td class="gt_row gt_right gt_striped" headers="8210">06:56:00</td>
-<td class="gt_row gt_right gt_striped" headers="8242">14:54:00</td>
-<td class="gt_row gt_right gt_striped" headers="8318">08:54:00</td>
-<td class="gt_row gt_right gt_striped" headers="8322">09:54:00</td>
-<td class="gt_row gt_right gt_striped" headers="8338">13:57:00</td>
-<td class="gt_row gt_right gt_striped" headers="8716">08:13:00</td>
-<td class="gt_row gt_right gt_striped" headers="8750">16:53:00</td>
-<td class="gt_row gt_right gt_striped" headers="8756">18:25:00</td>
-</tr>
-<tr class="odd">
-<td class="gt_row gt_right" headers="service_access" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">✓</td>
-<td class="gt_row gt_right" headers="service_cash" style="border-right-width: 2px; border-right-style: solid; border-right-color: black"></td>
-<td class="gt_row gt_right" headers="service_park" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">✓</td>
-<td class="gt_row gt_center" headers="fare_zone" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">1</td>
-<td class="gt_row gt_left" headers="stop_name" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">Carpenter</td>
-<td class="gt_row gt_right" headers="8210">06:58:00</td>
-<td class="gt_row gt_right" headers="8242">14:56:00</td>
-<td class="gt_row gt_right" headers="8318">08:56:00</td>
-<td class="gt_row gt_right" headers="8322">09:56:00</td>
-<td class="gt_row gt_right" headers="8338">13:59:00</td>
-<td class="gt_row gt_right" headers="8716">08:15:00</td>
-<td class="gt_row gt_right" headers="8750">16:55:00</td>
-<td class="gt_row gt_right" headers="8756">18:27:00</td>
-</tr>
-<tr class="even">
-<td class="gt_row gt_right gt_striped" headers="service_access" style="border-right-width: 2px; border-right-style: solid; border-right-color: black"></td>
-<td class="gt_row gt_right gt_striped" headers="service_cash" style="border-right-width: 2px; border-right-style: solid; border-right-color: black"></td>
-<td class="gt_row gt_right gt_striped" headers="service_park" style="border-right-width: 2px; border-right-style: solid; border-right-color: black"></td>
-<td class="gt_row gt_center gt_striped" headers="fare_zone" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">1</td>
-<td class="gt_row gt_left gt_striped" headers="stop_name" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">Upsal</td>
-<td class="gt_row gt_right gt_striped" headers="8210">07:00:00</td>
-<td class="gt_row gt_right gt_striped" headers="8242">14:58:00</td>
-<td class="gt_row gt_right gt_striped" headers="8318">08:58:00</td>
-<td class="gt_row gt_right gt_striped" headers="8322">09:58:00</td>
-<td class="gt_row gt_right gt_striped" headers="8338">14:01:00</td>
-<td class="gt_row gt_right gt_striped" headers="8716">08:17:00</td>
-<td class="gt_row gt_right gt_striped" headers="8750">16:57:00</td>
-<td class="gt_row gt_right gt_striped" headers="8756">18:29:00</td>
-</tr>
-<tr class="odd">
-<td class="gt_row gt_right" headers="service_access" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">✓</td>
-<td class="gt_row gt_right" headers="service_cash" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">✓</td>
-<td class="gt_row gt_right" headers="service_park" style="border-right-width: 2px; border-right-style: solid; border-right-color: black"></td>
-<td class="gt_row gt_center" headers="fare_zone" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">C</td>
-<td class="gt_row gt_left" headers="stop_name" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">Tulpehocken</td>
-<td class="gt_row gt_right" headers="8210">07:02:00</td>
-<td class="gt_row gt_right" headers="8242">15:00:00</td>
-<td class="gt_row gt_right" headers="8318">09:00:00</td>
-<td class="gt_row gt_right" headers="8322">10:00:00</td>
-<td class="gt_row gt_right" headers="8338">14:03:00</td>
-<td class="gt_row gt_right" headers="8716">08:19:00</td>
-<td class="gt_row gt_right" headers="8750">16:59:00</td>
-<td class="gt_row gt_right" headers="8756">18:31:00</td>
-</tr>
-<tr class="even">
-<td class="gt_row gt_right gt_striped" headers="service_access" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">✓</td>
-<td class="gt_row gt_right gt_striped" headers="service_cash" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">✓</td>
-<td class="gt_row gt_right gt_striped" headers="service_park" style="border-right-width: 2px; border-right-style: solid; border-right-color: black"></td>
-<td class="gt_row gt_center gt_striped" headers="fare_zone" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">C</td>
-<td class="gt_row gt_left gt_striped" headers="stop_name" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">Chelten Avenue</td>
-<td class="gt_row gt_right gt_striped" headers="8210">07:04:00</td>
-<td class="gt_row gt_right gt_striped" headers="8242">15:02:00</td>
-<td class="gt_row gt_right gt_striped" headers="8318">09:02:00</td>
-<td class="gt_row gt_right gt_striped" headers="8322">10:02:00</td>
-<td class="gt_row gt_right gt_striped" headers="8338">14:05:00</td>
-<td class="gt_row gt_right gt_striped" headers="8716">08:21:00</td>
-<td class="gt_row gt_right gt_striped" headers="8750">17:01:00</td>
-<td class="gt_row gt_right gt_striped" headers="8756">18:33:00</td>
-</tr>
-<tr class="odd">
-<td class="gt_row gt_right" headers="service_access" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">✓</td>
-<td class="gt_row gt_right" headers="service_cash" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">✓</td>
-<td class="gt_row gt_right" headers="service_park" style="border-right-width: 2px; border-right-style: solid; border-right-color: black"></td>
-<td class="gt_row gt_center" headers="fare_zone" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">C</td>
-<td class="gt_row gt_left" headers="stop_name" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">Queen Lane</td>
-<td class="gt_row gt_right" headers="8210">07:06:00</td>
-<td class="gt_row gt_right" headers="8242">15:04:00</td>
-<td class="gt_row gt_right" headers="8318">09:04:00</td>
-<td class="gt_row gt_right" headers="8322">10:04:00</td>
-<td class="gt_row gt_right" headers="8338">14:07:00</td>
-<td class="gt_row gt_right" headers="8716">08:23:00</td>
-<td class="gt_row gt_right" headers="8750">17:03:00</td>
-<td class="gt_row gt_right" headers="8756">18:35:00</td>
-</tr>
-<tr class="even">
-<td class="gt_row gt_right gt_striped" headers="service_access" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">✓</td>
-<td class="gt_row gt_right gt_striped" headers="service_cash" style="border-right-width: 2px; border-right-style: solid; border-right-color: black"></td>
-<td class="gt_row gt_right gt_striped" headers="service_park" style="border-right-width: 2px; border-right-style: solid; border-right-color: black"></td>
-<td class="gt_row gt_center gt_striped" headers="fare_zone" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">C</td>
-<td class="gt_row gt_left gt_striped" headers="stop_name" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">North Philadelphia</td>
-<td class="gt_row gt_right gt_striped" headers="8210">07:12:00</td>
-<td class="gt_row gt_right gt_striped" headers="8242">15:12:00</td>
-<td class="gt_row gt_right gt_striped" headers="8318">09:12:00</td>
-<td class="gt_row gt_right gt_striped" headers="8322">10:12:00</td>
-<td class="gt_row gt_right gt_striped" headers="8338">14:15:00</td>
-<td class="gt_row gt_right gt_striped" headers="8716">08:29:00</td>
-<td class="gt_row gt_right gt_striped" headers="8750">17:09:00</td>
-<td class="gt_row gt_right gt_striped" headers="8756">18:41:00</td>
-</tr>
-<tr class="odd">
-<td class="gt_row gt_right" headers="service_access">✓</td>
-<td class="gt_row gt_right" headers="service_cash"></td>
-<td class="gt_row gt_right" headers="service_park">✓</td>
-<td class="gt_row gt_center" headers="fare_zone">2</td>
-<td class="gt_row gt_left" headers="stop_name">Gray 30th Street</td>
-<td class="gt_row gt_right" headers="8210" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000">07:23:00</td>
-<td class="gt_row gt_right" headers="8242" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000">15:23:00</td>
-<td class="gt_row gt_right" headers="8318" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000">09:23:00</td>
-<td class="gt_row gt_right" headers="8322" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000">10:23:00</td>
-<td class="gt_row gt_right" headers="8338" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000">14:26:00</td>
-<td class="gt_row gt_right" headers="8716" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000">08:42:00</td>
-<td class="gt_row gt_right" headers="8750" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000">17:20:00</td>
-<td class="gt_row gt_right" headers="8756" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000">18:54:00</td>
-</tr>
-<tr class="even">
-<td class="gt_row gt_right gt_striped" headers="service_access"></td>
-<td class="gt_row gt_right gt_striped" headers="service_cash"></td>
-<td class="gt_row gt_right gt_striped" headers="service_park">✓</td>
-<td class="gt_row gt_center gt_striped" headers="fare_zone">2</td>
-<td class="gt_row gt_left gt_striped" headers="stop_name">Suburban Station</td>
-<td class="gt_row gt_right gt_striped" headers="8210" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000">07:28:00</td>
-<td class="gt_row gt_right gt_striped" headers="8242" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000">15:28:00</td>
-<td class="gt_row gt_right gt_striped" headers="8318" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000">09:28:00</td>
-<td class="gt_row gt_right gt_striped" headers="8322" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000">10:28:00</td>
-<td class="gt_row gt_right gt_striped" headers="8338" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000">14:31:00</td>
-<td class="gt_row gt_right gt_striped" headers="8716" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000">08:47:00</td>
-<td class="gt_row gt_right gt_striped" headers="8750" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000">17:25:00</td>
-<td class="gt_row gt_right gt_striped" headers="8756" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000">18:59:00</td>
-</tr>
-<tr class="odd">
-<td class="gt_row gt_right" headers="service_access"></td>
-<td class="gt_row gt_right" headers="service_cash"></td>
-<td class="gt_row gt_right" headers="service_park">✓</td>
-<td class="gt_row gt_center" headers="fare_zone">2</td>
-<td class="gt_row gt_left" headers="stop_name">Jefferson Station</td>
-<td class="gt_row gt_right" headers="8210" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000">07:33:00</td>
-<td class="gt_row gt_right" headers="8242" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000">15:33:00</td>
-<td class="gt_row gt_right" headers="8318" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000">09:33:00</td>
-<td class="gt_row gt_right" headers="8322" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000">10:33:00</td>
-<td class="gt_row gt_right" headers="8338" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000">14:36:00</td>
-<td class="gt_row gt_right" headers="8716" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000">08:52:00</td>
-<td class="gt_row gt_right" headers="8750" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000">17:30:00</td>
-<td class="gt_row gt_right" headers="8756" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000">19:04:00</td>
-</tr>
-<tr class="even">
-<td class="gt_row gt_right gt_striped" headers="service_access" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">✓</td>
-<td class="gt_row gt_right gt_striped" headers="service_cash" style="border-right-width: 2px; border-right-style: solid; border-right-color: black"></td>
-<td class="gt_row gt_right gt_striped" headers="service_park" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">✓</td>
-<td class="gt_row gt_center gt_striped" headers="fare_zone" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">2</td>
-<td class="gt_row gt_left gt_striped" headers="stop_name" style="border-right-width: 2px; border-right-style: solid; border-right-color: black">Temple University</td>
-<td class="gt_row gt_right gt_striped" headers="8210">07:37:00</td>
-<td class="gt_row gt_right gt_striped" headers="8242">15:37:00</td>
-<td class="gt_row gt_right gt_striped" headers="8318">09:37:00</td>
-<td class="gt_row gt_right gt_striped" headers="8322">10:37:00</td>
-<td class="gt_row gt_right gt_striped" headers="8338">14:40:00</td>
-<td class="gt_row gt_right gt_striped" headers="8716">08:57:00</td>
-<td class="gt_row gt_right gt_striped" headers="8750">17:35:00</td>
-<td class="gt_row gt_right gt_striped" headers="8756">19:08:00</td>
-</tr>
-</tbody>
+<table class="gt_table" style="table-layout:fixed;" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+  <colgroup>
+    <col style="width:20px;">
+    <col style="width:20px;">
+    <col style="width:20px;">
+    <col>
+    <col>
+    <col style="width:80px;">
+    <col style="width:80px;">
+    <col style="width:80px;">
+    <col style="width:80px;">
+    <col style="width:80px;">
+    <col style="width:80px;">
+    <col style="width:80px;">
+    <col style="width:80px;">
+  </colgroup>
+  <thead>
+    <tr class="gt_col_headings gt_spanner_row">
+      <th class="gt_center gt_columns_top_border gt_column_spanner_outer" rowspan="1" colspan="3" scope="colgroup" id="Services">
+        <div class="gt_column_spanner">Services</div>
+      </th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="2" colspan="1" scope="col" id="fare_zone">Fare<br>Zone</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="2" colspan="1" scope="col" id="stop_name">Stations</th>
+      <th class="gt_center gt_columns_top_border gt_column_spanner_outer" rowspan="1" colspan="8" scope="colgroup" id="Train Number">
+        <div class="gt_column_spanner">Train Number</div>
+      </th>
+    </tr>
+    <tr class="gt_col_headings">
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="service_access">A</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="service_cash">C</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="service_park">P</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="a8210">8210</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="a8242">8242</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="a8318">8318</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="a8322">8322</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="a8338">8338</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="a8716">8716</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="a8750">8750</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="a8756">8756</th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr><td headers="service_access" class="gt_row gt_right" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;"></td>
+<td headers="service_cash" class="gt_row gt_right" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;"></td>
+<td headers="service_park" class="gt_row gt_right" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">✓</td>
+<td headers="fare_zone" class="gt_row gt_center" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">2</td>
+<td headers="stop_name" class="gt_row gt_left" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">Chestnut Hill West</td>
+<td headers="8210" class="gt_row gt_right">6:51 AM</td>
+<td headers="8242" class="gt_row gt_right">2:49 PM</td>
+<td headers="8318" class="gt_row gt_right">8:49 AM</td>
+<td headers="8322" class="gt_row gt_right">9:49 AM</td>
+<td headers="8338" class="gt_row gt_right">1:52 PM</td>
+<td headers="8716" class="gt_row gt_right">8:08 AM</td>
+<td headers="8750" class="gt_row gt_right">4:48 PM</td>
+<td headers="8756" class="gt_row gt_right">6:20 PM</td></tr>
+    <tr><td headers="service_access" class="gt_row gt_right gt_striped" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;"></td>
+<td headers="service_cash" class="gt_row gt_right gt_striped" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;"></td>
+<td headers="service_park" class="gt_row gt_right gt_striped" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">✓</td>
+<td headers="fare_zone" class="gt_row gt_center gt_striped" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">2</td>
+<td headers="stop_name" class="gt_row gt_left gt_striped" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">Highland</td>
+<td headers="8210" class="gt_row gt_right gt_striped">6:52 AM</td>
+<td headers="8242" class="gt_row gt_right gt_striped">2:50 PM</td>
+<td headers="8318" class="gt_row gt_right gt_striped">8:50 AM</td>
+<td headers="8322" class="gt_row gt_right gt_striped">9:50 AM</td>
+<td headers="8338" class="gt_row gt_right gt_striped">1:53 PM</td>
+<td headers="8716" class="gt_row gt_right gt_striped">8:09 AM</td>
+<td headers="8750" class="gt_row gt_right gt_striped">4:49 PM</td>
+<td headers="8756" class="gt_row gt_right gt_striped">6:21 PM</td></tr>
+    <tr><td headers="service_access" class="gt_row gt_right" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;"></td>
+<td headers="service_cash" class="gt_row gt_right" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;"></td>
+<td headers="service_park" class="gt_row gt_right" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">✓</td>
+<td headers="fare_zone" class="gt_row gt_center" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">1</td>
+<td headers="stop_name" class="gt_row gt_left" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">St. Martins</td>
+<td headers="8210" class="gt_row gt_right">6:54 AM</td>
+<td headers="8242" class="gt_row gt_right">2:52 PM</td>
+<td headers="8318" class="gt_row gt_right">8:52 AM</td>
+<td headers="8322" class="gt_row gt_right">9:52 AM</td>
+<td headers="8338" class="gt_row gt_right">1:55 PM</td>
+<td headers="8716" class="gt_row gt_right">8:11 AM</td>
+<td headers="8750" class="gt_row gt_right">4:51 PM</td>
+<td headers="8756" class="gt_row gt_right">6:23 PM</td></tr>
+    <tr><td headers="service_access" class="gt_row gt_right gt_striped" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;"></td>
+<td headers="service_cash" class="gt_row gt_right gt_striped" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;"></td>
+<td headers="service_park" class="gt_row gt_right gt_striped" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">✓</td>
+<td headers="fare_zone" class="gt_row gt_center gt_striped" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">1</td>
+<td headers="stop_name" class="gt_row gt_left gt_striped" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">Richard Allen Lane</td>
+<td headers="8210" class="gt_row gt_right gt_striped">6:56 AM</td>
+<td headers="8242" class="gt_row gt_right gt_striped">2:54 PM</td>
+<td headers="8318" class="gt_row gt_right gt_striped">8:54 AM</td>
+<td headers="8322" class="gt_row gt_right gt_striped">9:54 AM</td>
+<td headers="8338" class="gt_row gt_right gt_striped">1:57 PM</td>
+<td headers="8716" class="gt_row gt_right gt_striped">8:13 AM</td>
+<td headers="8750" class="gt_row gt_right gt_striped">4:53 PM</td>
+<td headers="8756" class="gt_row gt_right gt_striped">6:25 PM</td></tr>
+    <tr><td headers="service_access" class="gt_row gt_right" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">✓</td>
+<td headers="service_cash" class="gt_row gt_right" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;"></td>
+<td headers="service_park" class="gt_row gt_right" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">✓</td>
+<td headers="fare_zone" class="gt_row gt_center" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">1</td>
+<td headers="stop_name" class="gt_row gt_left" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">Carpenter</td>
+<td headers="8210" class="gt_row gt_right">6:58 AM</td>
+<td headers="8242" class="gt_row gt_right">2:56 PM</td>
+<td headers="8318" class="gt_row gt_right">8:56 AM</td>
+<td headers="8322" class="gt_row gt_right">9:56 AM</td>
+<td headers="8338" class="gt_row gt_right">1:59 PM</td>
+<td headers="8716" class="gt_row gt_right">8:15 AM</td>
+<td headers="8750" class="gt_row gt_right">4:55 PM</td>
+<td headers="8756" class="gt_row gt_right">6:27 PM</td></tr>
+    <tr><td headers="service_access" class="gt_row gt_right gt_striped" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;"></td>
+<td headers="service_cash" class="gt_row gt_right gt_striped" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;"></td>
+<td headers="service_park" class="gt_row gt_right gt_striped" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;"></td>
+<td headers="fare_zone" class="gt_row gt_center gt_striped" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">1</td>
+<td headers="stop_name" class="gt_row gt_left gt_striped" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">Upsal</td>
+<td headers="8210" class="gt_row gt_right gt_striped">7:00 AM</td>
+<td headers="8242" class="gt_row gt_right gt_striped">2:58 PM</td>
+<td headers="8318" class="gt_row gt_right gt_striped">8:58 AM</td>
+<td headers="8322" class="gt_row gt_right gt_striped">9:58 AM</td>
+<td headers="8338" class="gt_row gt_right gt_striped">2:01 PM</td>
+<td headers="8716" class="gt_row gt_right gt_striped">8:17 AM</td>
+<td headers="8750" class="gt_row gt_right gt_striped">4:57 PM</td>
+<td headers="8756" class="gt_row gt_right gt_striped">6:29 PM</td></tr>
+    <tr><td headers="service_access" class="gt_row gt_right" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">✓</td>
+<td headers="service_cash" class="gt_row gt_right" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">✓</td>
+<td headers="service_park" class="gt_row gt_right" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;"></td>
+<td headers="fare_zone" class="gt_row gt_center" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">C</td>
+<td headers="stop_name" class="gt_row gt_left" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">Tulpehocken</td>
+<td headers="8210" class="gt_row gt_right">7:02 AM</td>
+<td headers="8242" class="gt_row gt_right">3:00 PM</td>
+<td headers="8318" class="gt_row gt_right">9:00 AM</td>
+<td headers="8322" class="gt_row gt_right">10:00 AM</td>
+<td headers="8338" class="gt_row gt_right">2:03 PM</td>
+<td headers="8716" class="gt_row gt_right">8:19 AM</td>
+<td headers="8750" class="gt_row gt_right">4:59 PM</td>
+<td headers="8756" class="gt_row gt_right">6:31 PM</td></tr>
+    <tr><td headers="service_access" class="gt_row gt_right gt_striped" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">✓</td>
+<td headers="service_cash" class="gt_row gt_right gt_striped" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">✓</td>
+<td headers="service_park" class="gt_row gt_right gt_striped" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;"></td>
+<td headers="fare_zone" class="gt_row gt_center gt_striped" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">C</td>
+<td headers="stop_name" class="gt_row gt_left gt_striped" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">Chelten Avenue</td>
+<td headers="8210" class="gt_row gt_right gt_striped">7:04 AM</td>
+<td headers="8242" class="gt_row gt_right gt_striped">3:02 PM</td>
+<td headers="8318" class="gt_row gt_right gt_striped">9:02 AM</td>
+<td headers="8322" class="gt_row gt_right gt_striped">10:02 AM</td>
+<td headers="8338" class="gt_row gt_right gt_striped">2:05 PM</td>
+<td headers="8716" class="gt_row gt_right gt_striped">8:21 AM</td>
+<td headers="8750" class="gt_row gt_right gt_striped">5:01 PM</td>
+<td headers="8756" class="gt_row gt_right gt_striped">6:33 PM</td></tr>
+    <tr><td headers="service_access" class="gt_row gt_right" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">✓</td>
+<td headers="service_cash" class="gt_row gt_right" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">✓</td>
+<td headers="service_park" class="gt_row gt_right" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;"></td>
+<td headers="fare_zone" class="gt_row gt_center" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">C</td>
+<td headers="stop_name" class="gt_row gt_left" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">Queen Lane</td>
+<td headers="8210" class="gt_row gt_right">7:06 AM</td>
+<td headers="8242" class="gt_row gt_right">3:04 PM</td>
+<td headers="8318" class="gt_row gt_right">9:04 AM</td>
+<td headers="8322" class="gt_row gt_right">10:04 AM</td>
+<td headers="8338" class="gt_row gt_right">2:07 PM</td>
+<td headers="8716" class="gt_row gt_right">8:23 AM</td>
+<td headers="8750" class="gt_row gt_right">5:03 PM</td>
+<td headers="8756" class="gt_row gt_right">6:35 PM</td></tr>
+    <tr><td headers="service_access" class="gt_row gt_right gt_striped" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">✓</td>
+<td headers="service_cash" class="gt_row gt_right gt_striped" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;"></td>
+<td headers="service_park" class="gt_row gt_right gt_striped" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;"></td>
+<td headers="fare_zone" class="gt_row gt_center gt_striped" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">C</td>
+<td headers="stop_name" class="gt_row gt_left gt_striped" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">North Philadelphia</td>
+<td headers="8210" class="gt_row gt_right gt_striped">7:12 AM</td>
+<td headers="8242" class="gt_row gt_right gt_striped">3:12 PM</td>
+<td headers="8318" class="gt_row gt_right gt_striped">9:12 AM</td>
+<td headers="8322" class="gt_row gt_right gt_striped">10:12 AM</td>
+<td headers="8338" class="gt_row gt_right gt_striped">2:15 PM</td>
+<td headers="8716" class="gt_row gt_right gt_striped">8:29 AM</td>
+<td headers="8750" class="gt_row gt_right gt_striped">5:09 PM</td>
+<td headers="8756" class="gt_row gt_right gt_striped">6:41 PM</td></tr>
+    <tr><td headers="service_access" class="gt_row gt_right" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000; border-top:none !important;;border-bottom:none !important;;border-right:solid white 2px !important;;color:white !important;;">✓</td>
+<td headers="service_cash" class="gt_row gt_right" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000; border-top:none !important;;border-bottom:none !important;;border-right:solid white 2px !important;;color:white !important;;"></td>
+<td headers="service_park" class="gt_row gt_right" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000; border-top:none !important;;border-bottom:none !important;;border-right:solid white 2px !important;;color:white !important;;">✓</td>
+<td headers="fare_zone" class="gt_row gt_center" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000; border-top:none !important;;border-bottom:none !important;;border-right:solid white 2px !important;;color:white !important;;">2</td>
+<td headers="stop_name" class="gt_row gt_left" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000; border-top:none !important;;border-bottom:none !important;;border-right:solid white 2px !important;;color:white !important;;">Gray 30th Street</td>
+<td headers="8210" class="gt_row gt_right" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000;">7:23 AM</td>
+<td headers="8242" class="gt_row gt_right" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000;">3:23 PM</td>
+<td headers="8318" class="gt_row gt_right" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000;">9:23 AM</td>
+<td headers="8322" class="gt_row gt_right" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000;">10:23 AM</td>
+<td headers="8338" class="gt_row gt_right" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000;">2:26 PM</td>
+<td headers="8716" class="gt_row gt_right" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000;">8:42 AM</td>
+<td headers="8750" class="gt_row gt_right" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000;">5:20 PM</td>
+<td headers="8756" class="gt_row gt_right" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000;">6:54 PM</td></tr>
+    <tr><td headers="service_access" class="gt_row gt_right gt_striped" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000; border-top:none !important;;border-bottom:none !important;;border-right:solid white 2px !important;;color:white !important;;"></td>
+<td headers="service_cash" class="gt_row gt_right gt_striped" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000; border-top:none !important;;border-bottom:none !important;;border-right:solid white 2px !important;;color:white !important;;"></td>
+<td headers="service_park" class="gt_row gt_right gt_striped" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000; border-top:none !important;;border-bottom:none !important;;border-right:solid white 2px !important;;color:white !important;;">✓</td>
+<td headers="fare_zone" class="gt_row gt_center gt_striped" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000; border-top:none !important;;border-bottom:none !important;;border-right:solid white 2px !important;;color:white !important;;">2</td>
+<td headers="stop_name" class="gt_row gt_left gt_striped" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000; border-top:none !important;;border-bottom:none !important;;border-right:solid white 2px !important;;color:white !important;;">Suburban Station</td>
+<td headers="8210" class="gt_row gt_right gt_striped" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000;">7:28 AM</td>
+<td headers="8242" class="gt_row gt_right gt_striped" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000;">3:28 PM</td>
+<td headers="8318" class="gt_row gt_right gt_striped" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000;">9:28 AM</td>
+<td headers="8322" class="gt_row gt_right gt_striped" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000;">10:28 AM</td>
+<td headers="8338" class="gt_row gt_right gt_striped" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000;">2:31 PM</td>
+<td headers="8716" class="gt_row gt_right gt_striped" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000;">8:47 AM</td>
+<td headers="8750" class="gt_row gt_right gt_striped" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000;">5:25 PM</td>
+<td headers="8756" class="gt_row gt_right gt_striped" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000;">6:59 PM</td></tr>
+    <tr><td headers="service_access" class="gt_row gt_right" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000; border-top:none !important;;border-bottom:none !important;;border-right:solid white 2px !important;;color:white !important;;"></td>
+<td headers="service_cash" class="gt_row gt_right" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000; border-top:none !important;;border-bottom:none !important;;border-right:solid white 2px !important;;color:white !important;;"></td>
+<td headers="service_park" class="gt_row gt_right" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000; border-top:none !important;;border-bottom:none !important;;border-right:solid white 2px !important;;color:white !important;;">✓</td>
+<td headers="fare_zone" class="gt_row gt_center" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000; border-top:none !important;;border-bottom:none !important;;border-right:solid white 2px !important;;color:white !important;;">2</td>
+<td headers="stop_name" class="gt_row gt_left" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000; border-top:none !important;;border-bottom:none !important;;border-right:solid white 2px !important;;color:white !important;;">Jefferson Station</td>
+<td headers="8210" class="gt_row gt_right" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000;">7:33 AM</td>
+<td headers="8242" class="gt_row gt_right" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000;">3:33 PM</td>
+<td headers="8318" class="gt_row gt_right" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000;">9:33 AM</td>
+<td headers="8322" class="gt_row gt_right" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000;">10:33 AM</td>
+<td headers="8338" class="gt_row gt_right" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000;">2:36 PM</td>
+<td headers="8716" class="gt_row gt_right" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000;">8:52 AM</td>
+<td headers="8750" class="gt_row gt_right" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000;">5:30 PM</td>
+<td headers="8756" class="gt_row gt_right" style="background-color: #000000; color: #FFFFFF; border-top-width: 1px; border-top-style: hidden; border-top-color: #000000; border-bottom-width: 1px; border-bottom-style: hidden; border-bottom-color: #000000;">7:04 PM</td></tr>
+    <tr><td headers="service_access" class="gt_row gt_right gt_striped" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">✓</td>
+<td headers="service_cash" class="gt_row gt_right gt_striped" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;"></td>
+<td headers="service_park" class="gt_row gt_right gt_striped" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">✓</td>
+<td headers="fare_zone" class="gt_row gt_center gt_striped" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">2</td>
+<td headers="stop_name" class="gt_row gt_left gt_striped" style="border-right-width: 2px; border-right-style: solid; border-right-color: black;">Temple University</td>
+<td headers="8210" class="gt_row gt_right gt_striped">7:37 AM</td>
+<td headers="8242" class="gt_row gt_right gt_striped">3:37 PM</td>
+<td headers="8318" class="gt_row gt_right gt_striped">9:37 AM</td>
+<td headers="8322" class="gt_row gt_right gt_striped">10:37 AM</td>
+<td headers="8338" class="gt_row gt_right gt_striped">2:40 PM</td>
+<td headers="8716" class="gt_row gt_right gt_striped">8:57 AM</td>
+<td headers="8750" class="gt_row gt_right gt_striped">5:35 PM</td>
+<td headers="8756" class="gt_row gt_right gt_striped">7:08 PM</td></tr>
+  </tbody>
+  
+  
 </table>
-
 </div>
 </div>
 </div>
@@ -1137,7 +1124,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
   }
     var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
     var mailtoRegex = new RegExp(/^mailto:/);
-      var filterRegex = new RegExp('/' + window.location.host + '/');
+      var filterRegex = new RegExp("https:\/\/analyses\.anthony\.computer");
     var isInternal = (href) => {
         return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
     }
