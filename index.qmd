@@ -6,7 +6,6 @@ editor: visual
 
 Anthony W. Baker
 
-
 ## Featured
 
 :::::: grid
@@ -36,4 +35,3 @@ Details about the third topic.
 ## All
 
 -   [NYC Elevators](/tidy_tuesday_nyc_elevators/tidy_tuesday_nyc_elevators.qmd): Exploring the tallest and fastest elevators in NYC.
-

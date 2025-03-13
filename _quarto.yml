@@ -4,6 +4,7 @@ project:
 
 website:
   title: "Data Analysis Portfolio"
+  site-url: https://analyses.anthony.computer
   # navbar:
   #   left:
   #     - href: index.qmd
