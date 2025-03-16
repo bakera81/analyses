@@ -12,13 +12,13 @@ Anthony W. Baker
 ::: g-col-4
 [**Tidy Tuesday: NYC Elevators**](/tidy_tuesday_nyc_elevators/tidy_tuesday_nyc_elevators.qmd)
 
-Exploring the tallest and fastest elevators in NYC.
+Exploring the tallest and fastest elevators in the five boroughs.
 :::
 
 ::: g-col-4
 [**SEPTA Transit Timetables**](septa_transit_times/septa-timetables.qmd)
 
-Demo using Great Tables to style a presentation-worthy table of transit data.
+Using Great Tables to style presentation-worthy transit data.
 :::
 
 ::: g-col-4
