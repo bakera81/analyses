@@ -1,0 +1,97 @@
+---
+title: "Maui County Transit"
+format: html
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+library(tidytransit)
+library(maps)
+
+# https://cran.r-project.org/web/packages/tidytransit/vignettes/frequency.html
+maui_raw <- 
+  read_gtfs("~/Repos/analyses/maui_county_transit/ntd-90241-202503170030.zip")
+
+maui <- maui_raw %>%
+  set_servicepattern() %>%
+  gtfs_as_sf()
+  
+```
+
+Analyze each service pattern to identify which services we want to analyze.
+
+```{r}
+shape_lengths <- 
+  maui$shapes %>%
+  as_tibble() %>%
+  transmute(
+    shape_id,
+    length = sf::st_length(maui$shapes))
+
+days_in_service <- maui$.$dates_servicepatterns %>% 
+  group_by(servicepattern_id) %>% 
+  summarise(days_in_service = n())
+  
+maui$trips %>%
+  left_join(
+    maui$.$servicepatterns,
+    by = "service_id") %>%
+  left_join(
+    shape_lengths,
+    by = "shape_id") %>%
+  left_join(maui$stop_times, by="trip_id") %>%
+  group_by(servicepattern_id) %>% 
+  summarise(
+    trips = n(), 
+    routes = n_distinct(route_id),
+    total_distance_per_day_km = sum(as.numeric(length), na.rm = T) / 1000,
+    route_avg_distance_km = (sum(as.numeric(length), na.rm = T) / 1000) / (trips * routes),
+    stops = (n_distinct(stop_id) / 2)) %>%
+  left_join(days_in_service, by = "servicepattern_id")
+```
+
+```{r}
+
+maui$trips %>%
+  count(service_id, route_id, sort = T)
+
+
+maui %>%
+  get_stop_frequency()
+
+# route_2575_stops <- 
+maui %>%
+  get_stop_frequency(start_time = 6 * 3600, end_time = 12 * 3600) %>%
+  filter(route_id == "2575" & direction_id == 0) %>%
+    left_join(maui$stops, by ="stop_id") %>% 
+    mutate(mean_headway_minutes = mean_headway / 60) %>%
+  View
+```
+
+```{r}
+# us <- fortify(map_data("state"), region = "region")
+map <- ggmap::get_googlemap("Maui, Hawaii, USA", zoom = 10, maptype = "terrain")
+
+maui$stop_times
+
+
+
+ggmap::ggmap(map) +
+  geom_point(
+    data = maui$stops, 
+    aes(stop_lon, stop_lat),
+    color = "black",
+    size = 1) +
+  geom_polygon(
+    data = maui$shapes %>% group_by(shape_id),
+    aes(x = shape_pt_lon, shape_pt_lat, group = shape_id, color = shape_id)
+  )
+  
+
+maui$stops 
+  ggmap::ggmap(map) + 
+  ggplot(aes(stop_lat, stop_lon)) + 
+  geom_map(map = us, map_id = "region") + 
+  ggthemes::theme_map()
+```
