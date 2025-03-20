@@ -1,0 +1,231 @@
+---
+title: "NYC Transit Health"
+format: html
+editor: visual
+---
+
+```{r setup}
+
+library(tidyverse)
+library(tidytransit)
+
+```
+
+```{r}
+
+# Choose the most popular package for reading GTFS-RT
+cranlogs::cran_downloads(
+  packages = c("tidytransit", "gtfs2gps", "gtfsio", "r5r"), 
+  when = "last-month") %>%
+  group_by(package) %>%
+  summarize(n = sum(count))
+
+```
+
+```{r read_data}
+nyc <- 
+  read_gtfs(
+    "http://web.mta.info/developers/data/nyct/subway/google_transit.zip") %>%
+  set_servicepattern() %>%
+  gtfs_as_sf()
+
+nyc_supplemental <- 
+  read_gtfs("http://web.mta.info/developers/files/google_transit_supplemented.zip") %>%
+  set_servicepattern() %>%
+  gtfs_as_sf()
+
+transitland <- 
+  read_gtfs("http://web.mta.info/developers/data/nyct/subway/google_transit.zip") %>%
+  set_servicepattern() %>%
+  gtfs_as_sf()
+
+summary(transitland$.)
+attributes(nyc)
+
+summary(nyc_supplemental)
+
+
+```
+
+```{r service_alerts}
+# https://catalog.data.gov/dataset/mta-service-alerts-beginning-april-2020
+
+service_alerts <- 
+  read_csv("nyc_transit/MTA_Service_Alerts__Beginning_April_2020.csv") %>%
+  janitor::clean_names()
+```
+
+```{r data_cleaning}
+
+service_alerts %>%
+  count(agency, sort = T)
+
+service_alerts %>%
+  filter(agency == "NYCT Subway") %>%
+  count(status_label, sort = T)
+
+delays <- 
+  service_alerts %>%
+  filter(
+    agency == "NYCT Subway",
+    status_label == "delays") %>%
+  mutate(
+    affected = str_split(affected, fixed(" | ")),
+    date = mdy_hms(date),
+    direction = case_when(
+      str_detect(header, fixed("Southbound", ignore_case = T)) ~ "Southbound",
+      str_detect(header, fixed("Northbound", ignore_case = T)) ~ "Northbound",
+      str_detect(header, fixed("Uptown", ignore_case = T)) ~ "Uptown",
+      str_detect(header, fixed("Downtown", ignore_case = T)) ~ "Downtown",
+      str_detect(header, fixed("both directions", ignore_case = T)) ~ "Both directions",
+      str_detect(header, fixed("entering", ignore_case = T)) & 
+         str_detect(header, fixed("leaving", ignore_case = T)) ~ "Both directions",
+      TRUE ~ str_extract(header, regex(".+bound", ignore_case = T)))) %>%
+  # From most cases with missing directions, the trains are simply delayed.
+  replace_na(list(direction = "Both directions")) %>%
+  unnest(affected) 
+  
+```
+
+```{r}
+
+delays %>%
+  count(
+    date = floor_date(date, "month")) %>%
+  ggplot(aes(date, n)) + 
+  geom_line() + 
+  labs(
+    title = "Monthly delays",
+    x = "Month",
+    y = "Number of delays")
+
+delays %>%
+  filter(date >= ymd("2024-06-01")) %>%
+  count(
+    date = floor_date(date, "month"),
+    affected) %>%
+  ggplot(aes(date, n, color = affected)) + 
+  geom_line() + 
+  labs(
+    title = "Monthly delays by service",
+    x = "Month",
+    y = "Number of delays",
+    color = "Service")
+
+# Perhaps the delays were categorized undre a different status label...
+delays %>%
+  filter(floor_date(date, "month") == ymd("2024-06-01"))
+
+delays %>%
+  mutate(
+    grouping = case_when(
+      affected %in% c("1", "2", "3") ~ "red",
+      affected %in% c("4", "5", "6", "6X") ~ "darkgreen",
+      affected %in% c("7", "7X") ~ "purple",
+      affected %in% c("A", "C", "E") ~ "blue",
+      affected %in% c("B", "D", "F", "M") ~ "darkorange",
+      affected %in% c("N", "Q", "R", "W") ~ "yellow",
+      affected %in% c("J", "Z") ~ "brown",
+      affected == "L" ~ "gray",
+      affected == "G" ~ "green",
+    TRUE ~ "other")) %>%
+  filter(date >= today() - years(2)) %>%
+  count(
+    date = date(date),
+    grouping, 
+    affected) %>%
+  ggplot(aes(tidytext::reorder_within(affected, n, grouping), n)) + 
+  geom_boxplot() + 
+  coord_flip() +
+  tidytext::scale_x_reordered() +
+  facet_wrap(
+    ~grouping, 
+    ncol = 2, 
+    scales = "free_y") +
+  theme_light()
+  
+  
+  
+  
+  
+  
+```
+
+```{r service_pattern_summary}
+shape_lengths <- 
+  nyc$shapes %>%
+  as_tibble() %>%
+  transmute(
+    shape_id,
+    length = sf::st_length(nyc$shapes))
+
+days_in_service <- 
+  nyc$.$dates_servicepatterns %>% 
+  group_by(servicepattern_id) %>% 
+  summarise(days_in_service = n())
+
+nyc$trips %>%
+  left_join(
+    nyc$.$servicepatterns,
+    by = "service_id") %>%
+  left_join(
+    shape_lengths,
+    by = "shape_id") %>%
+  left_join(nyc$stop_times, by = "trip_id") %>%
+  group_by(servicepattern_id) %>% 
+  summarise(
+    trips = n(), 
+    routes = n_distinct(route_id),
+    total_distance_per_day_km = sum(as.numeric(length), na.rm = T) / 1000,
+    route_avg_distance_km = (sum(as.numeric(length), na.rm = T) / 1000) / (trips * routes),
+    stops = (n_distinct(stop_id) / 2)) %>%
+  left_join(days_in_service, by = "servicepattern_id")
+
+```
+
+```{r}
+# Let's look only at most trips for weekday service
+# nyc$.$servicepatterns 
+
+nyc$trips %>%
+  filter(service_id == "Weekday") %>%
+  count(service_id, route_id, name = "trips", sort = T) 
+```
+
+Interestingly, East/West trains run the most trips
+
+```{r hourly_headway}
+
+
+
+get_hourly_stop_freq <- function(.gtfs, start_hr, stop_hr)  {
+  .gtfs %>%
+    get_stop_frequency(
+      start_time = start_hr * 3600, 
+      end_time = stop_hr * 3600, 
+      service_ids = "Weekday", 
+      by_route = T) %>%
+    mutate(start_hr = start_hr, stop_hr = stop_hr) 
+}
+
+
+weekday_hourly_headway <- tibble(
+  start_hr = c(0:23),
+  stop_hr = c(0:23)) %>%
+  pmap(function(start_hr, stop_hr) { 
+    get_hourly_stop_freq(nyc, start_hr, stop_hr) 
+  }) %>%
+  list_rbind() %>%
+  arrange(service_id, route_id, direction_id, start_hr)  
+
+weekday_hourly_headway %>%
+  arrange(desc(n_departures))
+
+# nyc %>%
+#   get_stop_frequency(
+#     start_time = 7*3600, 
+#     end_time = 8*3600, 
+#     service_ids = "Weekday", 
+#     by_route = T) %>%
+#   arrange(route_id, direction_id, mean_headway)
+```
