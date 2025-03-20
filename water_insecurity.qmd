@@ -1,0 +1,15 @@
+---
+title: "Water Insecurity"
+format: html
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+
+tt <- tidytuesdayR::tt_load('2025-01-28')
+
+water_insecurity_2022 <- tt$water_insecurity_2022
+water_insecurity_2023 <- tt$water_insecurity_2023
+
+```
