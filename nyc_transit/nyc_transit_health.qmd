@@ -163,51 +163,34 @@ install.packages("RProtoBuf")
 ```{r}
 library(httr)
 
-# Load the proto file which specifies the format the feed files follow:
-download.file(
-  url = "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/camsys%2Fsubway-alerts", 
-  destfile = "nyc_transit/nyct_subway_alerts.proto")
 
 url <- "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/camsys%2Fsubway-alerts"
-temp_file <- tempfile()
 
-resp <- httr::GET("https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/camsys%2Fall-alerts")
+resp <- httr::GET(url)
 
-resp <- RCurl::getURL(url)
+httr::status_code(resp)
 
-resp <- 
-  httr::GET(
-    url,
-    httr::write_disk(temp_file, overwrite = TRUE))
+binary_content <- httr::content(resp, "raw")
 
-RProtoBuf::descriptor()
-ls("RProtoBuf:DescriptorPool")
+# https://gtfs.org/documentation/realtime/gtfs-realtime.proto
+proto_path <- "nyc_transit/gtfs-realtime.proto"
 
-              
-read_gtfs_rt <- function(url, api_key = NULL) {
-  # # Set up request headers
-  # headers <- list()
-  # if (!is.null(api_key)) {
-  #   headers <- c(headers, "x-api-key" = api_key)
-  # }
-  
-  # Make the request
-  # response <- httr::GET(url, httr::add_headers(.headers = headers))
-  response <- httr::GET(url)
-  
-  # Check if request was successful
-  if (httr::status_code(response) != 200) {
-    stop("Failed to fetch GTFS-RT data: ", httr::http_status(response)$message)
-  }
-  
-  # Get binary content
-  binary_content <- httr::content(response, "raw")
-  
-  # Parse Protocol Buffer
-  feed <- protolite::parse_proto(binary_content)
-  
-  return(feed)
-}
+RProtoBuf::readProtoFiles(proto_path)
+
+message <- RProtoBuf::read(transit_realtime.FeedMessage, binary_content)
+
+as.list(message) %>%
+  names()
+
+message$header %>%
+  names()
+
+message$entity[[1]] %>%
+  names()
+
+message$entity[[23]]
+
+# TODO: Look at the spec to understand what data is in here
 ```
 
 ```{r}
