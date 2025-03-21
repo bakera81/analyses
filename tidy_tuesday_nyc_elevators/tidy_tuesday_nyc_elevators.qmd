@@ -17,7 +17,9 @@ format:
 This dataset comes from the Tidy Tuesday project from [December 06, 2022](https://github.com/rfordatascience/tidytuesday/tree/main/data/2022/2022-12-06).
 
 ## Load data
+
 First step: let's load up the Tidyverse and inspect our data.
+
 ```{r}
 #| output: false
 
@@ -35,7 +37,7 @@ tt$elevators %>%
 
 ## Inspect data
 
-We've got a few data cleaning tasks: 
+We've got a few data cleaning tasks:
 
 ```{r}
 tt$elevators %>%
@@ -69,6 +71,7 @@ tt$elevators %>%
 ## Clean data
 
 I'm gullible, but not that gullible: there shouldn't be elevators that are 912 stories tall or in the middle of the ocean. Let's clean this up.
+
 ```{r}
 elevators <- tt$elevators %>%
   janitor::clean_names() %>% # Make column names snake_case
@@ -88,6 +91,7 @@ elevators <- tt$elevators %>%
 ```
 
 Looking at our cleaned data, how tall are these elevators?
+
 ```{r}
 elevators %>%
   filter(!is.na(floor_to)) %>%
@@ -98,7 +102,9 @@ elevators %>%
 ```
 
 ## Building heights
+
 Now let's aggregate by building
+
 ```{r}
 by_building <- elevators %>%
   arrange(desc(floor_to)) %>%
@@ -135,6 +141,7 @@ g
 ```
 
 Let's make this 3D!
+
 ```{r}
 #| webgl: true
 #| out.width: "100%"
@@ -157,7 +164,9 @@ rglwidget()
 ```
 
 ## Elevator heights by zip code
+
 Join in zip code data to explore elevator heights by zip
+
 ```{r}
 library(sf)
 
@@ -203,6 +212,7 @@ joined_zip_codes %>%
 ## Elevator heights by borough
 
 How do elevator heights vary by borough?
+
 ```{r}
 by_building %>%
   filter(!is.na(borough)) %>%
@@ -211,8 +221,8 @@ by_building %>%
   scale_x_log10()
 ```
 
-
 And for folks less familiar with boxplots, here is the same data presented as densities:
+
 ```{r}
 by_building %>%
   filter(!is.na(borough)) %>%
@@ -222,6 +232,7 @@ by_building %>%
 ```
 
 ## Elevator speed
+
 ```{r}
 elevators %>%
   mutate(floor_from = as.numeric(floor_from)) %>%
@@ -236,4 +247,3 @@ elevators %>%
 ```
 
 You can see elevator speeds appear to be correlated with height. In a future analysis, we could find the elevators that are unusual, either unnecessarily fast or too slow given their height.
-

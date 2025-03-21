@@ -4,50 +4,14 @@ format: html
 editor: visual
 ---
 
-```{r setup}
-
-library(tidyverse)
-library(tidytransit)
-
-```
-
 ```{r}
-
-# Choose the most popular package for reading GTFS-RT
-cranlogs::cran_downloads(
-  packages = c("tidytransit", "gtfs2gps", "gtfsio", "r5r"), 
-  when = "last-month") %>%
-  group_by(package) %>%
-  summarize(n = sum(count))
-
+library(tidyverse)
 ```
 
-```{r read_data}
-nyc <- 
-  read_gtfs(
-    "http://web.mta.info/developers/data/nyct/subway/google_transit.zip") %>%
-  set_servicepattern() %>%
-  gtfs_as_sf()
 
-nyc_supplemental <- 
-  read_gtfs("http://web.mta.info/developers/files/google_transit_supplemented.zip") %>%
-  set_servicepattern() %>%
-  gtfs_as_sf()
+## Historical NYCT Subway Service Alerts
 
-transitland <- 
-  read_gtfs("http://web.mta.info/developers/data/nyct/subway/google_transit.zip") %>%
-  set_servicepattern() %>%
-  gtfs_as_sf()
-
-summary(transitland$.)
-attributes(nyc)
-
-summary(nyc_supplemental)
-
-
-```
-
-```{r service_alerts}
+```{r read_data_service_alerts}
 # https://catalog.data.gov/dataset/mta-service-alerts-beginning-april-2020
 
 service_alerts <- 
@@ -84,7 +48,7 @@ service_alerts %>%
 
 ```
 
-```{r}
+```{r factorize_service_status}
 
 status_levels <- 
   c("update", "some delays", "delays", "partial suspension", "no service")
@@ -133,7 +97,7 @@ simplified_statuses <- tribble(
 
 ```
 
-```{r}
+```{r alert_durations}
 
 alert_durations <- 
   service_alerts %>%
@@ -159,7 +123,8 @@ alert_durations <-
       most_major_alert = 
         levels(simplified_status_label)[max(as.integer(simplified_status_label))]) %>%
   ungroup() %>%
-  mutate(duration_est = end_time - start_time)
+  mutate(duration_est = end_time - start_time) %>%
+  filter(start_time != end_time) 
 
 # 34209 events had only a single update, so we cannot calculate the duration.  
 alert_durations %>%
@@ -168,11 +133,87 @@ alert_durations %>%
 
 ```{r}
 # Next step: join this with realtime data to predict the duration
-# Then fit a model for a more accurate prediction
-alert_durations %>%
-  filter(start_time != end_time) 
+# Then fit a model for a more accurate prediction. Random forest, gradient boost, multiple linear regression
+# Feature engineer: Create additional time-based features (hour of day, day of week, month) from your timestamps
+# Engineer features from the train line and alert type variables
+```
 
+## Realtime GTFS
+
+```{r}
+
+# Choose the most popular package for reading GTFS-RT
+cranlogs::cran_downloads(
+  packages = c("tidytransit", "gtfs2gps", "gtfsio", "r5r"), 
+  when = "last-month") %>%
+  group_by(package) %>%
+  summarize(n = sum(count))
+
+```
+
+```{r}
+install.packages("gtfsio")  # For GTFS static data
+install.packages("protolite") # For Protocol Buffer processing
+install.packages("httr")     # For HTTP requests
+install.packages("RProtoBuf")
+
+
+```
+
+```{r}
+library(httr)
+
+# Load the proto file which specifies the format the feed files follow:
+download.file(
+  url = "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/camsys%2Fsubway-alerts", 
+  destfile = "nyc_transit/nyct_subway_alerts.proto")
+
+url <- "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/camsys%2Fsubway-alerts"
+temp_file <- tempfile()
+
+resp <- httr::GET("https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/camsys%2Fall-alerts")
+
+resp <- RCurl::getURL(url)
+
+resp <- 
+  httr::GET(
+    url,
+    httr::write_disk(temp_file, overwrite = TRUE))
+
+RProtoBuf::descriptor()
+ls("RProtoBuf:DescriptorPool")
+
+              
+read_gtfs_rt <- function(url, api_key = NULL) {
+  # # Set up request headers
+  # headers <- list()
+  # if (!is.null(api_key)) {
+  #   headers <- c(headers, "x-api-key" = api_key)
+  # }
   
+  # Make the request
+  # response <- httr::GET(url, httr::add_headers(.headers = headers))
+  response <- httr::GET(url)
+  
+  # Check if request was successful
+  if (httr::status_code(response) != 200) {
+    stop("Failed to fetch GTFS-RT data: ", httr::http_status(response)$message)
+  }
+  
+  # Get binary content
+  binary_content <- httr::content(response, "raw")
+  
+  # Parse Protocol Buffer
+  feed <- protolite::parse_proto(binary_content)
+  
+  return(feed)
+}
+```
+
+```{r}
+bdfm_url <- "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs-bdfm"
+
+read_gtfs_rt(bdfm_url)
 ```
 
 ```{r}
@@ -201,7 +242,38 @@ delays <-
   
 ```
 
-\
+
+## Delays
+
+```{r}
+library(tidytransit)
+
+```
+
+```{r read_data}
+nyc <- 
+  read_gtfs(
+    "http://web.mta.info/developers/data/nyct/subway/google_transit.zip") %>%
+  set_servicepattern() %>%
+  gtfs_as_sf()
+
+nyc_supplemental <- 
+  read_gtfs("http://web.mta.info/developers/files/google_transit_supplemented.zip") %>%
+  set_servicepattern() %>%
+  gtfs_as_sf()
+
+transitland <- 
+  read_gtfs("http://web.mta.info/developers/data/nyct/subway/google_transit.zip") %>%
+  set_servicepattern() %>%
+  gtfs_as_sf()
+
+summary(transitland$.)
+attributes(nyc)
+
+summary(nyc_supplemental)
+
+
+```
 
 ```{r}
 
