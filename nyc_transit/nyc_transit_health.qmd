@@ -64,10 +64,124 @@ service_alerts %>%
   filter(agency == "NYCT Subway") %>%
   count(status_label, sort = T)
 
+service_alerts %>%
+  count(event_id, sort = T)
+
+service_alerts %>%
+  filter(event_id == 6993) %>%
+  View
+
+service_alerts %>%
+  arrange(event_id, update_number) %>%
+  head(1000) %>%
+  View
+
+service_alerts %>%
+  group_by(event_id) %>% 
+  summarize(n_status = n_distinct(status_label)) %>%
+  arrange(desc(n_status))
+
+
+```
+
+```{r}
+
+status_levels <- 
+  c("update", "some delays", "delays", "partial suspension", "no service")
+
+simplified_statuses <- tribble(
+  ~status_label,          ~simplified_status_label,  
+  "delays",               "delays",
+  "weekday-service",      "update",
+  "local-to-express",     "partial suspension",
+  "part-suspended",       "partial suspension",
+  "essential-service",    "partial suspension",
+  "some-delays",          "some delays",
+  "express-to-local",     "some delays",
+  "no-scheduled-service", "no service",
+  "trains-rerouted",      "partial suspension",
+  "weekend-service",      "some delays",
+  "stops-skipped",        "some delays",
+  "some-reroutes",        "partial suspension",
+  "slow-speeds",          "some delays",
+  "reroute",              "partial suspension",
+  "stations-skipped",     "partial suspension",
+  "suspended",            "no service",
+  "multiple-changes",     "update",
+  "boarding-change",      "update",
+  "multiple-impacts",     "update",
+  "sunday-schedule",      "some delays",
+  "service-change",       "update",
+  "cancellations",        "no service",
+  "severe-delays",        "delays",
+  "information-outage",   "update",
+  "shuttle-buses-detoured",     "partial suspension", 
+  "planned-work",               "update",
+  "arrival-information-outage", "some delays",
+  "saturday-schedule",          "some delays",
+  "special-notice",             "update",
+  "station-notice",             "update",
+  "crowding",                   "some delays",
+  "on-or-close",                "update",
+  "special-event",              "update"
+  ) %>%
+  mutate(
+    simplified_status_label = factor(
+      simplified_status_label,
+      levels = status_levels)) 
+
+
+```
+
+```{r}
+
+alert_durations <- 
+  service_alerts %>%
+  filter(agency == "NYCT Subway") %>%
+  mutate(
+    status_label = str_split(status_label, fixed(" | ")),
+    affected = str_split(affected, fixed(" | ")),
+    date = mdy_hms(date),
+    service = case_when(
+      wday(date, week_start = 1) >= 6 ~ "weekend",
+      hour(date) >= 5 ~ "weekday",
+      TRUE ~ "weeknight")) %>%
+  unnest(status_label) %>%
+  unnest(affected) %>%
+  left_join(simplified_statuses, by = "status_label") %>%
+  group_by(event_id, service, affected) %>%
+    summarise(
+      n_updates = n_distinct(alert_id),
+      start_time = min(date, na.rm = T),
+      end_time = max(date, na.rm = T),
+      most_minor_alert = 
+        levels(simplified_status_label)[min(as.integer(simplified_status_label))],
+      most_major_alert = 
+        levels(simplified_status_label)[max(as.integer(simplified_status_label))]) %>%
+  ungroup() %>%
+  mutate(duration_est = end_time - start_time)
+
+# 34209 events had only a single update, so we cannot calculate the duration.  
+alert_durations %>%
+  count(n_updates == 1)
+```
+
+```{r}
+# Next step: join this with realtime data to predict the duration
+# Then fit a model for a more accurate prediction
+alert_durations %>%
+  filter(start_time != end_time) 
+
+  
+```
+
+```{r}
 delays <- 
   service_alerts %>%
   filter(
     agency == "NYCT Subway",
+    # Note: some delays are concatenated on a single row,
+    #  like `part-suspended | trains-rerouted | delays | suspended`
     status_label == "delays") %>%
   mutate(
     affected = str_split(affected, fixed(" | ")),
@@ -86,6 +200,8 @@ delays <-
   unnest(affected) 
   
 ```
+
+\
 
 ```{r}
 
