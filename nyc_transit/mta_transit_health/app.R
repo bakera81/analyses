@@ -18,12 +18,16 @@ source("utils.R")
 # Load historical (static) data
 alert_durations <- get_historical_alert_data()
 
+# Load current realtime data
+rt_alerts <- get_gtfs_rt_alerts()
+
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
 
     # Application title
-    titlePanel("Old Faithful Geyser Data"),
+    titlePanel("MTA Subway Alert Status"),
+    
 
     # Sidebar with a slider input for number of bins 
     sidebarLayout(
@@ -37,8 +41,9 @@ ui <- fluidPage(
 
         # Show a plot of the generated distribution
         mainPanel(
+          uiOutput("overviewUI"),
           tableOutput("overviewTbl"),
-           plotOutput("distPlot")
+          plotOutput("distPlot")
         )
     )
 )
@@ -46,7 +51,59 @@ ui <- fluidPage(
 # Define server logic required to draw a histogram
 server <- function(input, output) {
   
-  rt_alerts <- get_gtfs_rt_alerts()
+  output$overviewUI <- renderUI({
+    
+    all_route_statuses <- 
+      alert_durations %>%
+      distinct(route_id = affected) %>%
+      enrich_routes(route_id) %>%
+      left_join(
+        rt_alerts, 
+        by = "route_id") %>%
+      group_by(route_id, route_grouping) %>%
+      summarise(
+        active_alerts = sum(!is.na(id)),
+        headers = list(header__en)) %>%
+      select(-headers)
+    
+    subway_style <- "
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #FF0000;
+      color: white;
+      font-size: 24px;
+      font-weight: bold;
+    "
+    
+    subway_ui <- function(route_id, route_grouping, ...) {
+      subway_style <- paste0(
+        "
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color:", route_grouping, ";
+        color: white;
+        font-size: 24px;
+        font-weight: bold;
+        ")
+        
+      tags$div(
+        style = subway_style,
+        route_id
+      )
+    }
+    
+    all_route_statuses %>%
+      pmap(subway_ui)
+    
+  })
   
   output$overviewTbl <- renderTable({
     
