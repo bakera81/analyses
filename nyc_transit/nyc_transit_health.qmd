@@ -8,7 +8,6 @@ editor: visual
 library(tidyverse)
 ```
 
-
 ## Historical NYCT Subway Service Alerts
 
 ```{r read_data_service_alerts}
@@ -141,30 +140,95 @@ alert_durations %>%
 ## Realtime GTFS
 
 ```{r}
+#| eval: false
 
-# Choose the most popular package for reading GTFS-RT
-cranlogs::cran_downloads(
-  packages = c("tidytransit", "gtfs2gps", "gtfsio", "r5r"), 
-  when = "last-month") %>%
-  group_by(package) %>%
-  summarize(n = sum(count))
-
-```
-
-```{r}
-install.packages("gtfsio")  # For GTFS static data
-install.packages("protolite") # For Protocol Buffer processing
-install.packages("httr")     # For HTTP requests
-install.packages("RProtoBuf")
+library(reticulate)
+virtualenv_create("r-nyc_transit")
+virtualenv_install(
+  "r-nyc_transit", 
+  packages = c(
+    "gtfs-realtime-bindings",
+    "requests"))
 
 
 ```
 
 ```{r}
+library(reticulate)
+library(jsonlite)
+
+use_virtualenv("r-nyc_transit")
+source_python("nyc_transit/gtfs_rt.py")
+
+alerts_json <- get_mta_alerts() %>%
+  jsonlite::fromJSON(flatten = T)
+```
+
+```{r}
+
+alerts_tbl <- 
+  alerts_json %>%
+  as_tibble() %>%
+  tidyr::unnest_wider(everything(), names_sep = "_") %>%
+  janitor::clean_names() %>%
+  rename(
+    id = id_1, 
+    route_id = alert_informed_entity_route_id,
+    header = alert_header_text_translation_text,
+    header_avail_translations = alert_header_text_translation_language,
+    description = alert_description_text_translation_text,
+    description_avail_translations = alert_description_text_translation_language) 
+
+affected_routes <- 
+  alerts_tbl %>%
+  select(id, route_id) %>%
+  unnest(route_id)  %>%
+  filter(!is.na(route_id))
+
+headers <-
+  alerts_tbl %>% 
+  select(id, contains("header")) %>%
+  # If they don't all have the same length, use and extra ID and the 
+  #  id_col arg in pivot wider to keep everything matched up.
+  # mutate(temp_id = row_number()) %>% 
+  unnest(-contains("id")) %>%
+  mutate(
+    header_avail_translations = snakecase::to_snake_case(
+      header_avail_translations)) %>%
+  pivot_wider(
+    names_from = header_avail_translations,
+    values_from = header,
+    names_prefix = "header__"
+  ) 
+
+descriptions <- 
+  alerts_tbl %>% 
+  select(id, contains("description")) %>%
+  unnest(-contains("id")) %>%
+  mutate(
+    description_avail_translations = snakecase::to_snake_case(
+      description_avail_translations)) %>%
+  pivot_wider(
+    names_from = description_avail_translations,
+    values_from = description,
+    names_prefix = "description__") 
+
+alerts_clean <- 
+  affected_routes %>% 
+  inner_join(headers, by = "id") %>%
+  inner_join(descriptions, by = "id") 
+
+
+  
+```
+
+```{r}
+library(tidyverse)
 library(httr)
+library(RProtoBuf)
 
-
-url <- "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/camsys%2Fsubway-alerts"
+url <- 
+  "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/camsys%2Fsubway-alerts"
 
 resp <- httr::GET(url)
 
@@ -172,14 +236,50 @@ httr::status_code(resp)
 
 binary_content <- httr::content(resp, "raw")
 
+# Standard GTFSRT
 # https://gtfs.org/documentation/realtime/gtfs-realtime.proto
-proto_path <- "nyc_transit/gtfs-realtime.proto"
+# proto_path <- "nyc_transit/gtfs-realtime.proto"
+# RProtoBuf::readProtoFiles(proto_path)
 
-RProtoBuf::readProtoFiles(proto_path)
+# Custom MTA GTFS-RT
+# https://raw.githubusercontent.com/OneBusAway/onebusaway-gtfs-realtime-api/master/src/main/proto/com/google/transit/realtime/gtfs-realtime-service-status.proto
+# This won't work if you've aread read a different proto file.
+# Update this .proto file to import the standard GTFS-RT proto file.
+RProtoBuf::readProtoFiles("nyc_transit/nyc_mta_gtfs-realtime-service-status.proto")
+# RProtoBuf::readProtoFiles(dir = "nyc_transit")
 
-message <- RProtoBuf::read(transit_realtime.FeedMessage, binary_content)
 
-as.list(message) %>%
+ls("RProtoBuf:DescriptorPool")
+
+# message <- RProtoBuf::read(transit_realtime.FeedMessage, binary_content)
+
+alert <- RProtoBuf::read(transit_realtime.MercuryAlert, binary_content) 
+
+cat(as.character(alert))
+
+alert_list <- protobuf_to_list(alert)
+
+test <- as.list(alert)
+
+test2 <- str(alert)
+
+
+descriptor(alert)
+
+
+str(alert$notes)
+data.frame(
+  id = sapply(alert$notes, \(x) names(x) ))
+
+trip_update <- RProtoBuf::read(transit_realtime.TripUpdate, binary_content)
+
+trip_update %>% names()
+
+trip_update$trip$modified_trip
+
+alert$informed_entity
+
+as.list(alert) %>%
   names()
 
 message$header %>%
@@ -191,6 +291,175 @@ message$entity[[1]] %>%
 message$entity[[23]]
 
 # TODO: Look at the spec to understand what data is in here
+```
+
+```{r}
+my_protobuf_to_list <- function(pb_obj) {
+  # Get the descriptor
+  descriptor <- pb_obj$descriptor()
+    
+  # Get the number of fields
+  field_count <- descriptor$field_count()    
+    
+  result <- list()
+    
+  for (i in 1:field_count) {
+    field_name <- descriptor[[i]]$name()
+    value <- pb_obj[[i]]
+      
+    # Recursively process if it's a message
+    if (inherits(value, "Message")) {
+      result[[field_name]] <- my_protobuf_to_list(value)
+    } else {
+      result[[field_name]] <- value
+    }
+  }
+  
+  return(result)
+}
+
+
+protobuf_to_list <- function(pb_obj) {
+  if (inherits(pb_obj, "Message")) {
+    # Get the descriptor
+    descriptor <- pb_obj$descriptor()
+    
+    # Create an empty list to store the result
+    result <- list()
+    
+    # Get the number of fields
+    field_count <- descriptor$field_count()
+    
+    # Process each field by index
+    for (i in 1:field_count) {
+      # Get field descriptor
+      # Note: field index is 0-based
+      field_desc <- descriptor$field(i-1)
+      
+      # Get field name
+      field_name <- field_desc$name()
+      
+      # Check if it's a repeated field
+      if (field_desc$is_repeated()) {
+        size <- pb_obj$fieldSize(field_name)
+        
+        if (size > 0) {
+          # Initialize a list for repeated values
+          repeated_values <- list()
+          
+          # Process each item in the repeated field
+          for (j in 1:size) {
+            item_value <- pb_obj$get(field_name, j-1)  # Zero-based index
+            
+            # Recursively process if it's a message
+            if (inherits(item_value, "Message")) {
+              repeated_values[[j]] <- protobuf_to_list(item_value)
+            } else {
+              repeated_values[[j]] <- item_value
+            }
+          }
+          
+          result[[field_name]] <- repeated_values
+        }
+      } else {
+        # For non-repeated fields, try to access directly
+        tryCatch({
+          value <- pb_obj[[field_name]]
+          
+          # Only add non-NULL values to the result
+          if (!is.null(value)) {
+            # Recursively process if it's a message
+            if (inherits(value, "Message")) {
+              result[[field_name]] <- protobuf_to_list(value)
+            } else {
+              result[[field_name]] <- value
+            }
+          }
+        }, error = function(e) {
+          # Skip fields that can't be accessed
+        })
+      }
+    }
+    
+    return(result)
+  } else {
+    # Return non-message objects as-is
+    return(pb_obj)
+  }
+}
+```
+
+```{r name-based-list-fun}
+# First, confirm we have the message object
+class(alert)
+# Should show "Message" "R6"
+
+# Define a function to recursively convert a protobuf message to a list
+protobuf_to_list <- function(pb_obj) {
+  if (inherits(pb_obj, "Message")) {
+    # Get field names
+    descriptor <- pb_obj$descriptor()
+    field_names <- names(descriptor)
+    
+    # Create an empty list to store the result
+    result <- list()
+    
+    # Get the number of fields
+    field_count <- descriptor$field_count()
+
+    
+    # Process each field
+    for (i in field_count) {
+      # Check if the field is present in the message
+      
+      if (pb_obj$has(field)) {
+        # Get the field value
+        value <- pb_obj[[field]]
+        
+        # If it's a repeated field, we need to handle it as a list
+        if (pb_obj$descriptor()$field(field)$is_repeated()) {
+          # Initialize a list for repeated values
+          repeated_values <- list()
+          
+          # Get the size of the repeated field
+          size <- pb_obj$fieldSize(field)
+          
+          # Process each item in the repeated field
+          for (i in 1:size) {
+            item_value <- pb_obj$get(field, i-1)  # Zero-based index
+            
+            # Recursively process if it's a message
+            if (inherits(item_value, "Message")) {
+              repeated_values[[i]] <- protobuf_to_list(item_value)
+            } else {
+              repeated_values[[i]] <- item_value
+            }
+          }
+          
+          result[[field]] <- repeated_values
+        } else {
+          # For non-repeated fields, recursively process if it's a message
+          if (inherits(value, "Message")) {
+            result[[field]] <- protobuf_to_list(value)
+          } else {
+            result[[field]] <- value
+          }
+        }
+      }
+    }
+    
+    return(result)
+  } else {
+    # Return non-message objects as-is
+    return(pb_obj)
+  }
+}
+
+# Convert the alert message to a list
+alert_list <- protobuf_to_list(alert)
+
+# Now you can access the data using standard list operations
+str(alert_list, max.level = 2)
 ```
 
 ```{r}
@@ -224,7 +493,6 @@ delays <-
   unnest(affected) 
   
 ```
-
 
 ## Delays
 
@@ -287,6 +555,8 @@ delays %>%
 delays %>%
   filter(floor_date(date, "month") == ymd("2024-06-01"))
 
+
+# TODO: http://web.mta.info/developers/resources/line_colors.htm
 delays %>%
   mutate(
     grouping = case_when(
