@@ -233,6 +233,30 @@ alerts_clean <-
   
 ```
 
+## Visualizations
+
+```{r}
+source("utils.R")
+
+rt_alerts <- get_gtfs_rt_alerts()
+alert_durations <- get_historical_alert_data()
+
+all_routes <- 
+  alert_durations %>%
+  distinct(route_id = affected) %>%
+  enrich_routes(route_id)
+
+all_routes %>%
+  left_join(
+    rt_alerts, 
+    by = "route_id") %>%
+  group_by(route_id, route_grouping) %>%
+  summarise(
+    active_alerts = sum(!is.na(id)),
+    headers = list(header__en))
+
+```
+
 ## Combine datasets
 
 ```{r}

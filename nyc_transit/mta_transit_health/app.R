@@ -49,9 +49,21 @@ server <- function(input, output) {
   rt_alerts <- get_gtfs_rt_alerts()
   
   output$overviewTbl <- renderTable({
-    alert_durations %>%
+    
+    all_routes <- 
+      alert_durations %>%
       distinct(route_id = affected) %>%
       enrich_routes(route_id)
+    
+    all_routes %>%
+      left_join(
+        rt_alerts, 
+        by = "route_id") %>%
+      group_by(route_id, route_grouping) %>%
+      summarise(
+        active_alerts = sum(!is.na(id)),
+        headers = list(header__en)) %>%
+      select(-headers)
   })
 
     output$distPlot <- renderPlot({

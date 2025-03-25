@@ -14,51 +14,64 @@ mutate_service <- function(.tbl, date_col) {
 }
 
 
-factorize_status_label <- function() {
+factorize_status_label <- function(.tbl, status_col) {
+  
+  # Create the join specification
+  status_col_expr <- enquo(status_col)
+  status_col_name <- quo_name(status_col_expr)
+  join_by <- setNames("raw_status", status_col_name)
   
   status_levels <- 
     c("update", "some delays", "delays", "partial suspension", "no service")
   
-  tribble(
-    ~status_label,          ~simplified_status_label,  
-    "delays",               "delays",
-    "weekday-service",      "update",
-    "local-to-express",     "partial suspension",
-    "part-suspended",       "partial suspension",
-    "essential-service",    "partial suspension",
-    "some-delays",          "some delays",
-    "express-to-local",     "some delays",
-    "no-scheduled-service", "no service",
-    "trains-rerouted",      "partial suspension",
-    "weekend-service",      "some delays",
-    "stops-skipped",        "some delays",
-    "some-reroutes",        "partial suspension",
-    "slow-speeds",          "some delays",
-    "reroute",              "partial suspension",
-    "stations-skipped",     "partial suspension",
-    "suspended",            "no service",
-    "multiple-changes",     "update",
-    "boarding-change",      "update",
-    "multiple-impacts",     "update",
-    "sunday-schedule",      "some delays",
-    "service-change",       "update",
-    "cancellations",        "no service",
-    "severe-delays",        "delays",
-    "information-outage",   "update",
-    "shuttle-buses-detoured",     "partial suspension", 
-    "planned-work",               "update",
-    "arrival-information-outage", "some delays",
-    "saturday-schedule",          "some delays",
-    "special-notice",             "update",
-    "station-notice",             "update",
-    "crowding",                   "some delays",
-    "on-or-close",                "update",
-    "special-event",              "update"
-  ) %>%
+  simplified_statuses <- 
+    tribble(
+      ~raw_status,          ~simplified_status_label,  
+      "delays",               "delays",
+      "weekday-service",      "update",
+      "local-to-express",     "partial suspension",
+      "part-suspended",       "partial suspension",
+      "essential-service",    "partial suspension",
+      "some-delays",          "some delays",
+      "express-to-local",     "some delays",
+      "no-scheduled-service", "no service",
+      "trains-rerouted",      "partial suspension",
+      "weekend-service",      "some delays",
+      "stops-skipped",        "some delays",
+      "some-reroutes",        "partial suspension",
+      "slow-speeds",          "some delays",
+      "reroute",              "partial suspension",
+      "stations-skipped",     "partial suspension",
+      "suspended",            "no service",
+      "multiple-changes",     "update",
+      "boarding-change",      "update",
+      "multiple-impacts",     "update",
+      "sunday-schedule",      "some delays",
+      "service-change",       "update",
+      "cancellations",        "no service",
+      "severe-delays",        "delays",
+      "information-outage",   "update",
+      "shuttle-buses-detoured",     "partial suspension", 
+      "planned-work",               "update",
+      "arrival-information-outage", "some delays",
+      "saturday-schedule",          "some delays",
+      "special-notice",             "update",
+      "station-notice",             "update",
+      "crowding",                   "some delays",
+      "on-or-close",                "update",
+      "special-event",              "update"
+    ) %>%
     mutate(
-      simplified_status_label = factor(
+      simplified_status = factor(
         simplified_status_label,
-        levels = status_levels)) 
+        levels = status_levels)) %>%
+    select(-simplified_status_label)
+      
+  
+  .tbl %>%
+    left_join(
+      simplified_statuses,
+      by = join_by) 
 }
 
 enrich_routes <- function(.tbl, route_col) {
@@ -77,16 +90,17 @@ enrich_routes <- function(.tbl, route_col) {
         TRUE ~ "other")) 
 }
 
+
 get_historical_alert_data <- function() {
   # Fetch data
   # https://catalog.data.gov/dataset/mta-service-alerts-beginning-april-2020
   service_alerts <- 
     read_csv("../MTA_Service_Alerts__Beginning_April_2020.csv") %>%
-    janitor::clean_names()
+    janitor::clean_names() %>%
+    filter(agency == "NYCT Subway") 
   
   # Clean duration data
-    service_alerts %>%
-    filter(agency == "NYCT Subway") %>%
+  service_alerts %>%
     mutate(
       status_label = str_split(status_label, fixed(" | ")),
       affected = str_split(affected, fixed(" | ")),
@@ -94,16 +108,17 @@ get_historical_alert_data <- function() {
     mutate_service(date) %>%
     unnest(status_label) %>%
     unnest(affected) %>%
-    left_join(simplified_statuses, by = "status_label") %>%
+    factorize_status_label(status_label) %>%
     group_by(event_id, service, affected) %>%
     summarise(
       n_updates = n_distinct(alert_id),
       start_time = min(date, na.rm = T),
       end_time = max(date, na.rm = T),
       most_minor_alert = 
-        levels(simplified_status_label)[min(as.integer(simplified_status_label))],
+        levels(simplified_status)[min(as.integer(simplified_status))],
       most_major_alert = 
-        levels(simplified_status_label)[max(as.integer(simplified_status_label))]) %>%
+        levels(simplified_status)[max(as.integer(simplified_status))],
+      all_alert_statuses = paste(simplified_status, collapse = ",")) %>%
     ungroup() %>%
     mutate(duration_est = end_time - start_time) %>%
     filter(start_time != end_time) 
