@@ -98,17 +98,24 @@ simplified_statuses <- tribble(
 
 ```{r alert_durations}
 
+mutate_service <- function(.tbl, date_col) {
+  .tbl %>%
+    mutate(
+      service = case_when(
+        wday({{ date_col }}, week_start = 1) >= 6 ~ "weekend",
+        hour({{ date_col }}) >= 5 ~ "weekday",
+        TRUE ~ "weeknight"))   
+}
+
+
 alert_durations <- 
   service_alerts %>%
   filter(agency == "NYCT Subway") %>%
   mutate(
     status_label = str_split(status_label, fixed(" | ")),
     affected = str_split(affected, fixed(" | ")),
-    date = mdy_hms(date),
-    service = case_when(
-      wday(date, week_start = 1) >= 6 ~ "weekend",
-      hour(date) >= 5 ~ "weekday",
-      TRUE ~ "weeknight")) %>%
+    date = mdy_hms(date)) %>%
+  mutate_service(date) %>%
   unnest(status_label) %>%
   unnest(affected) %>%
   left_join(simplified_statuses, by = "status_label") %>%
@@ -126,15 +133,13 @@ alert_durations <-
   filter(start_time != end_time) 
 
 # 34209 events had only a single update, so we cannot calculate the duration.  
-alert_durations %>%
-  count(n_updates == 1)
-```
+# alert_durations %>%
+#   count(n_updates == 1)
 
-```{r}
-# Next step: join this with realtime data to predict the duration
-# Then fit a model for a more accurate prediction. Random forest, gradient boost, multiple linear regression
-# Feature engineer: Create additional time-based features (hour of day, day of week, month) from your timestamps
-# Engineer features from the train line and alert type variables
+# alert_durations %>%
+#   group_by(
+#     route_id = affected,
+#     service)
 ```
 
 ## Realtime GTFS
@@ -177,11 +182,12 @@ alerts_tbl <-
     header = alert_header_text_translation_text,
     header_avail_translations = alert_header_text_translation_language,
     description = alert_description_text_translation_text,
-    description_avail_translations = alert_description_text_translation_language) 
+    description_avail_translations = alert_description_text_translation_language)  %>%
+  mutate(date = now())
 
 affected_routes <- 
   alerts_tbl %>%
-  select(id, route_id) %>%
+  select(id, route_id, date) %>%
   unnest(route_id)  %>%
   filter(!is.na(route_id))
 
@@ -213,13 +219,70 @@ descriptions <-
     values_from = description,
     names_prefix = "description__") 
 
-alerts_clean <- 
+alerts_clean <-
   affected_routes %>% 
   inner_join(headers, by = "id") %>%
-  inner_join(descriptions, by = "id") 
+  inner_join(descriptions, by = "id") %>%
+  mutate(
+    status_label = str_extract(id, ":(.+):", group = 1),
+    id_raw = id,
+    id = str_extract(id_raw, ":(\\d+)$", group = 1)) %>%
+  mutate_service(date)
 
 
   
+```
+
+## Combine datasets
+
+```{r}
+
+alerts_lookup <- alerts_clean %>%
+  rename_with(
+    ~paste0(., "_current_alert"),
+    -any_of(c("route_id", "service"))) %>%
+  inner_join(
+    alert_durations %>%
+      rename_with(
+        ~paste0(., "_past_alerts"),
+        -any_of(c("affected", "service"))), 
+    by = c("route_id" = "affected", "service"),
+    suffix = c("_current_alert", "_historical"),
+    relationship = "many-to-many")
+```
+
+```{r}
+alerts_clean %>%
+  filter(
+    service == "weekday",
+    route_id == "6") 
+
+# Timeseries
+alert_durations %>%
+  filter(
+    service == "weekday",
+    affected == "6",
+    start_time >= today() - 365) %>%
+  group_by(date = floor_date(start_time, "week"), most_major_alert) %>%
+  summarise(
+    n_events = n(),
+    mean_updates = mean(n_updates, na.rm = T)) %>%
+  ggplot(aes(date, n_events, color = most_major_alert)) + 
+  geom_line()
+
+alerts_lookup %>%
+  filter(
+    service == "weekday",
+    route_id == "6") %>%
+  count(id_current_alert)
+```
+
+```{r}
+
+# Next step: join this with realtime data to predict the duration
+# Then fit a model for a more accurate prediction. Random forest, gradient boost, multiple linear regression
+# Feature engineer: Create additional time-based features (hour of day, day of week, month) from timestamps
+# Engineer features from the train line and alert type variables
 ```
 
 ```{r}
