@@ -10,7 +10,7 @@
 
 library(shiny)
 library(bslib)
-library(reticulate)
+library(plotly)
 
 # Load helper functions
 source("utils.R")
@@ -115,6 +115,15 @@ server <- function(input, output) {
     }
   })
   
+  selected_route_data <- reactive({
+    alert_durations %>%
+    mutate_service(now(), "current_service") %>%
+    filter(
+      affected == input$nav_tabs,
+      service == current_service,
+      start_time >= today() - 365) 
+  })
+  
   # Render content based on selected tab
   output$selected_route_content <- renderUI({
     # Get the selected tab
@@ -150,7 +159,8 @@ server <- function(input, output) {
         selected_rt_alerts %>%
           summarise(updated_at = max(date, na.rm = T)) %>%
           pull(updated_at))),
-      plotOutput("past_alert_freq"),
+      plotlyOutput(outputId = "past_alert_freq"),
+      plotlyOutput("past_alert_vol"),
       p(paste(
         "There are", 
         all_routes %>%
@@ -161,20 +171,33 @@ server <- function(input, output) {
     )
   })
   
-  output$past_alert_freq <- renderPlot({
-    # TODO: Make this a reactive Plotly
+  output$past_alert_vol <- renderPlotly({
+    
+    p <- 
+      selected_route_data() %>% # Using the reactive dataset from above
+      count(date = date(start_time)) %>%
+      ggplot(aes(date, n)) +
+      geom_col() +
+      theme_light()
+    
+    ggplotly(p)
+    
+  })
+  
+  output$past_alert_freq <- renderPlotly({
     # TODO: update this to be number of concurrent alerts
     # TODO: Update this to include vline and hline for current alerts
-    alert_durations %>%
+    
+    p <- selected_route_data() %>%
+      mutate(now = now()) %>%
       mutate_service(now(), "current_service") %>%
-      filter(
-        affected == selected_route,
-        service == current_service,
-        start_time >= today() - 365) %>%
       count(date = date(start_time)) %>%
       ggplot(aes(n)) + 
-      stat_ecdf() + 
+      stat_ecdf() +
       theme_light()
+    
+    ggplotly(p, dynamicTicks = TRUE)
+    
   })
   
   output$overviewUI <- renderUI({
