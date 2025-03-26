@@ -31,10 +31,12 @@ subway_ui <- function(route_id, route_grouping, ...) {
 
 ### DATA HELPERS
 
-mutate_service <- function(.tbl, date_col) {
+mutate_service <- function(.tbl, date_col, service_col = "service") {
+  service_col_name <- rlang::sym(service_col)
+  
   .tbl %>%
     mutate(
-      service = case_when(
+      !!service_col_name := case_when(
         wday({{ date_col }}, week_start = 1) >= 6 ~ "weekend",
         hour({{ date_col }}) >= 5 ~ "weekday",
         TRUE ~ "weeknight"))   

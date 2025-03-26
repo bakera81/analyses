@@ -11,7 +11,6 @@
 library(shiny)
 library(bslib)
 library(reticulate)
-use_virtualenv("r-nyc_transit")
 
 # Load helper functions
 source("utils.R")
@@ -126,9 +125,12 @@ server <- function(input, output) {
       return(NULL)
     }
     
+    selected_rt_alerts <- rt_alerts %>%
+      filter(route_id == selected_route) 
+      
+    
     # Format all alerts for current route
-    all_alert_taglist <- rt_alerts %>%
-      filter(route_id == selected_route) %>%
+    all_alert_taglist <- selected_rt_alerts %>%
       pmap(function(header__en, description__en, ...) {
         div(
           class = "alert-item",
@@ -144,6 +146,12 @@ server <- function(input, output) {
     tagList(
       h3(paste("All current alerts for", selected_route, "trains")),
       p(paste(
+        "Last updated ", 
+        selected_rt_alerts %>%
+          summarise(updated_at = max(date, na.rm = T)) %>%
+          pull(updated_at))),
+      plotOutput("past_alert_freq"),
+      p(paste(
         "There are", 
         all_routes %>%
           filter(route_id == selected_route) %>%
@@ -151,6 +159,22 @@ server <- function(input, output) {
         "current alerts:")),
       all_alert_taglist
     )
+  })
+  
+  output$past_alert_freq <- renderPlot({
+    # TODO: Make this a reactive Plotly
+    # TODO: update this to be number of concurrent alerts
+    # TODO: Update this to include vline and hline for current alerts
+    alert_durations %>%
+      mutate_service(now(), "current_service") %>%
+      filter(
+        affected == selected_route,
+        service == current_service,
+        start_time >= today() - 365) %>%
+      count(date = date(start_time)) %>%
+      ggplot(aes(n)) + 
+      stat_ecdf() + 
+      theme_light()
   })
   
   output$overviewUI <- renderUI({
