@@ -23,7 +23,7 @@ alert_durations <- get_historical_alert_data()
 rt_alerts <- get_gtfs_rt_alerts()
 
 # Identify the routes to display
-all_route_statuses <- 
+all_routes <- 
   alert_durations %>%
   distinct(route_id = affected) %>%
   enrich_routes(route_id) %>%
@@ -75,9 +75,9 @@ server <- function(input, output) {
   
   # On initialization, add tabs for each route
   observe({
-    for (i in 1:nrow(all_route_statuses)) {
+    for (i in 1:nrow(all_routes)) {
       
-      route_data <- all_route_statuses[i, ]
+      route_data <- all_routes[i, ]
       
       # Create tab label with subway_ui
       tab_label <- subway_ui(
@@ -126,19 +126,36 @@ server <- function(input, output) {
       return(NULL)
     }
     
-    # Get the data for the selected route
-    route_data <- all_route_statuses[all_route_statuses$route_id == selected_route, ]
+    # Format all alerts for current route
+    all_alert_taglist <- rt_alerts %>%
+      filter(route_id == selected_route) %>%
+      pmap(function(header__en, description__en, ...) {
+        div(
+          class = "alert-item",
+          style = "margin-bottom: 15px;",
+          h4(header__en, style = "margin-bottom: 5px; color: #d9534f;"),
+          p(description__en)
+        )
+      }) %>%
+      tagList()
+      
     
     # Return detailed content for this route
     tagList(
-      h3(paste("Detailed information for Route", selected_route)),
-      # Additional content based on route_data
+      h3(paste("All current alerts for", selected_route, "trains")),
+      p(paste(
+        "There are", 
+        all_routes %>%
+          filter(route_id == selected_route) %>%
+          pull(active_alerts),
+        "current alerts:")),
+      all_alert_taglist
     )
   })
   
   output$overviewUI <- renderUI({
     
-    all_route_statuses %>%
+    all_routes %>%
       pmap(subway_ui)
     
   })
