@@ -4,6 +4,33 @@ library(jsonlite)
 
 use_virtualenv("r-nyc_transit")
 
+### UI HELPERS
+
+subway_ui <- function(route_id, route_grouping, ...) {
+  subway_style <- paste0(
+    "
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color:", route_grouping, ";
+        color: white;
+        font-size: 24px;
+        font-weight: bold;
+        ")
+  
+  tags$div(
+    style = subway_style,
+    route_id
+  )
+}
+
+
+
+### DATA HELPERS
+
 mutate_service <- function(.tbl, date_col) {
   .tbl %>%
     mutate(
@@ -97,7 +124,9 @@ get_historical_alert_data <- function() {
   service_alerts <- 
     read_csv("../MTA_Service_Alerts__Beginning_April_2020.csv") %>%
     janitor::clean_names() %>%
-    filter(agency == "NYCT Subway") 
+    filter(agency == "NYCT Subway") %>%
+    # TODO: REMOVE THIS
+    sample_n(1000)
   
   # Clean duration data
   service_alerts %>%

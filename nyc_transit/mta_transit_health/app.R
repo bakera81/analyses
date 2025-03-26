@@ -9,6 +9,7 @@
 
 
 library(shiny)
+library(bslib)
 library(reticulate)
 use_virtualenv("r-nyc_transit")
 
@@ -21,12 +22,32 @@ alert_durations <- get_historical_alert_data()
 # Load current realtime data
 rt_alerts <- get_gtfs_rt_alerts()
 
+# Identify the routes to display
+all_route_statuses <- 
+  alert_durations %>%
+  distinct(route_id = affected) %>%
+  enrich_routes(route_id) %>%
+  left_join(
+    rt_alerts, 
+    by = "route_id") %>%
+  group_by(route_id, route_grouping) %>%
+  summarise(
+    active_alerts = sum(!is.na(id)),
+    headers = list(header__en)) %>%
+  select(-headers)
+
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
 
     # Application title
     titlePanel("MTA Subway Alert Status"),
+    
+    # Dybamically added nav items for each subway route
+    navbarPage(
+      id = "nav_tabs",  # This ID is critical - it's what nav_insert will target
+      title = "Routes"
+    ),
     
 
     # Sidebar with a slider input for number of bins 
@@ -41,6 +62,7 @@ ui <- fluidPage(
 
         # Show a plot of the generated distribution
         mainPanel(
+          uiOutput("selected_route_content"),
           uiOutput("overviewUI"),
           tableOutput("overviewTbl"),
           plotOutput("distPlot")
@@ -51,54 +73,70 @@ ui <- fluidPage(
 # Define server logic required to draw a histogram
 server <- function(input, output) {
   
-  output$overviewUI <- renderUI({
-    
-    all_route_statuses <- 
-      alert_durations %>%
-      distinct(route_id = affected) %>%
-      enrich_routes(route_id) %>%
-      left_join(
-        rt_alerts, 
-        by = "route_id") %>%
-      group_by(route_id, route_grouping) %>%
-      summarise(
-        active_alerts = sum(!is.na(id)),
-        headers = list(header__en)) %>%
-      select(-headers)
-    
-    subway_style <- "
-      display: inline-flex;
-      justify-content: center;
-      align-items: center;
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background-color: #FF0000;
-      color: white;
-      font-size: 24px;
-      font-weight: bold;
-    "
-    
-    subway_ui <- function(route_id, route_grouping, ...) {
-      subway_style <- paste0(
-        "
-        display: inline-flex;
-        justify-content: center;
-        align-items: center;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background-color:", route_grouping, ";
-        color: white;
-        font-size: 24px;
-        font-weight: bold;
-        ")
-        
-      tags$div(
-        style = subway_style,
-        route_id
+  # On initialization, add tabs for each route
+  observe({
+    for (i in 1:nrow(all_route_statuses)) {
+      
+      route_data <- all_route_statuses[i, ]
+      
+      # Create tab label with subway_ui
+      tab_label <- subway_ui(
+        route_id = route_data$route_id,
+        route_grouping = route_data$route_grouping
       )
+      
+      # Create the tab content
+      tab_content <- tabPanel(
+        title = tab_label,
+        value = route_data$route_id,
+        h4(paste("Route:", route_data$route_id)),
+        # p(paste("Current status:", route_data$status)),
+        plotOutput(paste0("plot_", route_data$route_id))
+      )
+      
+      # Insert tab 
+      nav_insert(
+        id = "nav_tabs",        # ID of the navbarPage
+        nav = tab_content,      # The tab panel to insert
+        target = NULL,          # No specific target tab (add to end)
+        position = "after",     # Add after the target (or at end if target is NULL)
+        select = FALSE,         # Don't automatically select this tab
+        # session = session       # Current session
+      )
+      
+      # Create the plot output for this route
+      local({
+        route_id <- route_data$route_id
+        output_id <- paste0("plot_", route_id)
+        
+        output[[output_id]] <- renderPlot({
+          plot(1:10, main = paste("Data for Route", route_id))
+        })
+      })
     }
+  })
+  
+  # Render content based on selected tab
+  output$selected_route_content <- renderUI({
+    # Get the selected tab
+    selected_route <- input$nav_tabs
+    
+    # If it's the overview tab, show nothing or overview content
+    if(is.null(selected_route) || selected_route == "overview_tab") {
+      return(NULL)
+    }
+    
+    # Get the data for the selected route
+    route_data <- all_route_statuses[all_route_statuses$route_id == selected_route, ]
+    
+    # Return detailed content for this route
+    tagList(
+      h3(paste("Detailed information for Route", selected_route)),
+      # Additional content based on route_data
+    )
+  })
+  
+  output$overviewUI <- renderUI({
     
     all_route_statuses %>%
       pmap(subway_ui)
