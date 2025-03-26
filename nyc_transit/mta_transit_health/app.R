@@ -161,6 +161,7 @@ server <- function(input, output) {
           pull(updated_at))),
       plotlyOutput(outputId = "past_alert_freq"),
       plotlyOutput("past_alert_vol"),
+      plotlyOutput("past_alert_duration"),
       p(paste(
         "There are", 
         all_routes %>%
@@ -170,6 +171,28 @@ server <- function(input, output) {
       all_alert_taglist
     )
   })
+  
+  
+  output$past_alert_duration <- renderPlotly({
+    p <- 
+      # selected_route_data() %>%
+      alert_durations %>%
+      mutate(
+        duration_mins = as.numeric(duration_est) / 60,
+        duration_hrs = as.numeric(duration_est) / (60 * 60)) %>%
+      ggplot(aes(duration_hrs)) + 
+      stat_ecdf() +
+      scale_x_log10(
+        breaks = c(.25, .5, 1, 6, 24, 48, 72, 7 * 24, 4 * 7 * 24),
+        labels = c("15 mins", "30 mins", "1 hour", "6 hours", "1 day", "2 days", "3 days", "1 week", "1 month")) + 
+      coord_cartesian(xlim = c(0.01, 7 * 24)) + 
+      theme_light() + 
+      theme(
+        axis.text.x = element_text(angle = 45, hjust = 1))
+    
+    ggplotly(p)
+  })
+  
   
   output$past_alert_vol <- renderPlotly({
     
