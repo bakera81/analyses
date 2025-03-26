@@ -22,54 +22,24 @@ alert_durations <- get_historical_alert_data()
 rt_alerts <- get_gtfs_rt_alerts()
 
 # Identify the routes to display
-all_routes <- 
-  alert_durations %>%
-  distinct(route_id = affected) %>%
-  enrich_routes(route_id) %>%
-  left_join(
-    rt_alerts, 
-    by = "route_id") %>%
-  group_by(route_id, route_grouping) %>%
-  summarise(
-    active_alerts = sum(!is.na(id)),
-    headers = list(header__en)) %>%
-  select(-headers)
-
+all_routes <- get_all_routes(alert_durations)
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
 
-    # Application title
-    titlePanel("MTA Subway Alert Status"),
-    
-    # Dybamically added nav items for each subway route
-    navbarPage(
-      id = "nav_tabs",  # This ID is critical - it's what nav_insert will target
-      title = "Routes"
-    ),
-    
-
-    # Sidebar with a slider input for number of bins 
-    sidebarLayout(
-        sidebarPanel(
-            sliderInput("bins",
-                        "Number of bins:",
-                        min = 1,
-                        max = 50,
-                        value = 30)
-        ),
-
-        # Show a plot of the generated distribution
-        mainPanel(
-          uiOutput("selected_route_content"),
-          uiOutput("overviewUI"),
-          tableOutput("overviewTbl"),
-          plotOutput("distPlot")
-        )
+  # Application title
+  titlePanel("MTA Subway Alert Status"),
+  
+  # Dynamically added nav items for each subway route
+  navbarPage(
+    id = "nav_tabs",  
+    title = "Routes",
+    card(
+      uiOutput("selected_route_content")
     )
+  )
 )
 
-# Define server logic required to draw a histogram
 server <- function(input, output) {
   
   # On initialization, add tabs for each route
@@ -89,6 +59,7 @@ server <- function(input, output) {
         title = tab_label,
         value = route_data$route_id,
         h4(paste("Route:", route_data$route_id)),
+        # TODO: show number of alerts, including zero
         # p(paste("Current status:", route_data$status)),
         plotOutput(paste0("plot_", route_data$route_id))
       )
@@ -99,8 +70,7 @@ server <- function(input, output) {
         nav = tab_content,      # The tab panel to insert
         target = NULL,          # No specific target tab (add to end)
         position = "after",     # Add after the target (or at end if target is NULL)
-        select = FALSE,         # Don't automatically select this tab
-        # session = session       # Current session
+        select = FALSE          # Don't automatically select this tab
       )
       
       # Create the plot output for this route
@@ -117,11 +87,12 @@ server <- function(input, output) {
   
   selected_route_data <- reactive({
     alert_durations %>%
-    mutate_service(now(), "current_service") %>%
-    filter(
-      affected == input$nav_tabs,
-      service == current_service,
-      start_time >= today() - 365) 
+      # Based on the current time, determine the service (weekday / weeknight)
+      mutate_service(now(), "current_service") %>%
+      filter(
+        affected == input$nav_tabs,
+        service == current_service,
+        start_time >= today() - 365) 
   })
   
   # Render content based on selected tab
@@ -223,41 +194,6 @@ server <- function(input, output) {
     
   })
   
-  output$overviewUI <- renderUI({
-    
-    all_routes %>%
-      pmap(subway_ui)
-    
-  })
-  
-  output$overviewTbl <- renderTable({
-    
-    all_routes <- 
-      alert_durations %>%
-      distinct(route_id = affected) %>%
-      enrich_routes(route_id)
-    
-    all_routes %>%
-      left_join(
-        rt_alerts, 
-        by = "route_id") %>%
-      group_by(route_id, route_grouping) %>%
-      summarise(
-        active_alerts = sum(!is.na(id)),
-        headers = list(header__en)) %>%
-      select(-headers)
-  })
-
-    output$distPlot <- renderPlot({
-        # generate bins based on input$bins from ui.R
-        x    <- faithful[, 2]
-        bins <- seq(min(x), max(x), length.out = input$bins + 1)
-
-        # draw the histogram with the specified number of bins
-        hist(x, breaks = bins, col = 'darkgray', border = 'white',
-             xlab = 'Waiting time to next eruption (in mins)',
-             main = 'Histogram of waiting times')
-    })
 }
 
 # Run the application 

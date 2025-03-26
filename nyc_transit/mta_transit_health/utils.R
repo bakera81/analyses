@@ -219,3 +219,17 @@ get_gtfs_rt_alerts <- function() {
       id = str_extract(id_raw, ":(\\d+)$", group = 1)) %>%
     mutate_service(date)
 }
+
+get_all_routes <- function(alert_durations) {
+  alert_durations %>%
+    distinct(route_id = affected) %>%
+    enrich_routes(route_id) %>%
+    left_join(
+      rt_alerts, 
+      by = "route_id") %>%
+    group_by(route_id, route_grouping) %>%
+    summarise(
+      active_alerts = sum(!is.na(id)),
+      headers = list(header__en)) %>%
+    select(-headers)
+}
