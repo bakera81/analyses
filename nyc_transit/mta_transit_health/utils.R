@@ -28,6 +28,11 @@ subway_ui <- function(route_id, route_grouping, ...) {
 }
 
 
+get_radio_choice_names <- function(all_routes) {
+  all_routes %>%
+    pmap(subway_ui)
+}
+
 
 ### DATA HELPERS
 

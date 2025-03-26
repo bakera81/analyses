@@ -1,12 +1,3 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    https://shiny.posit.co/
-#
-
 
 library(shiny)
 library(bslib)
@@ -24,73 +15,45 @@ rt_alerts <- get_gtfs_rt_alerts()
 # Identify the routes to display
 all_routes <- get_all_routes(alert_durations)
 
+# Populate and style radio buttons
+radio_choice_names <- get_radio_choice_names(all_routes)
+radio_choice_values <- all_routes$route_id
+
 # Define UI for application that draws a histogram
-ui <- fluidPage(
+ui <- page_sidebar(
 
   # Application title
-  titlePanel("MTA Subway Alert Status"),
+  # titlePanel("MTA Subway Alert Status"),
+  title = "MTA Subway Alert Status",
   
-  # Dynamically added nav items for each subway route
-  navbarPage(
-    id = "nav_tabs",  
-    title = "Routes",
-    card(
-      uiOutput("selected_route_content")
-    )
+  # Route selector via sidebar
+  sidebar = sidebar(
+    radioButtons(
+      "radio", 
+      "Select a route:",
+      choiceNames = radio_choice_names,
+      choiceValues = radio_choice_values)
+  ),
+  
+  card(
+    plotlyOutput("past_alert_freq")
+  ),
+  card(
+    plotlyOutput("past_alert_vol")
+  ),
+  card(
+    plotlyOutput("past_alert_duration")
   )
 )
 
 server <- function(input, output) {
-  
-  # On initialization, add tabs for each route
-  observe({
-    for (i in 1:nrow(all_routes)) {
-      
-      route_data <- all_routes[i, ]
-      
-      # Create tab label with subway_ui
-      tab_label <- subway_ui(
-        route_id = route_data$route_id,
-        route_grouping = route_data$route_grouping
-      )
-      
-      # Create the tab content
-      tab_content <- tabPanel(
-        title = tab_label,
-        value = route_data$route_id,
-        h4(paste("Route:", route_data$route_id)),
-        # TODO: show number of alerts, including zero
-        # p(paste("Current status:", route_data$status)),
-        plotOutput(paste0("plot_", route_data$route_id))
-      )
-      
-      # Insert tab 
-      nav_insert(
-        id = "nav_tabs",        # ID of the navbarPage
-        nav = tab_content,      # The tab panel to insert
-        target = NULL,          # No specific target tab (add to end)
-        position = "after",     # Add after the target (or at end if target is NULL)
-        select = FALSE          # Don't automatically select this tab
-      )
-      
-      # Create the plot output for this route
-      local({
-        route_id <- route_data$route_id
-        output_id <- paste0("plot_", route_id)
-        
-        output[[output_id]] <- renderPlot({
-          plot(1:10, main = paste("Data for Route", route_id))
-        })
-      })
-    }
-  })
   
   selected_route_data <- reactive({
     alert_durations %>%
       # Based on the current time, determine the service (weekday / weeknight)
       mutate_service(now(), "current_service") %>%
       filter(
-        affected == input$nav_tabs,
+        affected == input$radio,
         service == current_service,
         start_time >= today() - 365) 
   })
@@ -98,7 +61,7 @@ server <- function(input, output) {
   # Render content based on selected tab
   output$selected_route_content <- renderUI({
     # Get the selected tab
-    selected_route <- input$nav_tabs
+    selected_route <- input$nav_tabs_2
     
     # If it's the overview tab, show nothing or overview content
     if(is.null(selected_route) || selected_route == "overview_tab") {
@@ -146,8 +109,8 @@ server <- function(input, output) {
   
   output$past_alert_duration <- renderPlotly({
     p <- 
-      # selected_route_data() %>%
-      alert_durations %>%
+      selected_route_data() %>%
+      # alert_durations %>%
       mutate(
         duration_mins = as.numeric(duration_est) / 60,
         duration_hrs = as.numeric(duration_est) / (60 * 60)) %>%
