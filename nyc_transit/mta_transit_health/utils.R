@@ -33,6 +33,13 @@ get_radio_choice_names <- function(all_routes) {
     pmap(subway_ui)
 }
 
+alert_accordion_ui <- function(header, description, ...) {
+  accordion_panel(
+    title = header,
+    p(description)
+  )
+}
+
 
 ### DATA HELPERS
 

@@ -34,7 +34,6 @@ ui <- page_sidebar(
       choiceNames = radio_choice_names,
       choiceValues = radio_choice_values)
   ),
-  
   card(
     plotlyOutput("past_alert_freq")
   ),
@@ -43,6 +42,9 @@ ui <- page_sidebar(
   ),
   card(
     plotlyOutput("past_alert_duration")
+  ),
+  card(
+    uiOutput("selected_route_alerts")
   )
 )
 
@@ -56,6 +58,33 @@ server <- function(input, output) {
         affected == input$radio,
         service == current_service,
         start_time >= today() - 365) 
+  })
+  
+  selected_rt_alerts <- reactive({
+    rt_alerts %>%
+      mutate_service(now(), "current_service") %>%
+      filter(
+        route_id == input$radio,
+        service == current_service)
+  })
+  
+  output$selected_route_alerts <- renderUI({
+    # selected_rt_alerts() %>%
+      accordion_list <- rt_alerts %>%
+      mutate_service(now(), "current_service") %>%
+      filter(
+        route_id == input$radio,
+        service == current_service) %>%
+      rename(
+        header = header__en,
+        description = description__en) %>%
+    pmap(alert_accordion_ui)
+      
+      accordion(
+        accordion_list,
+        open = F,
+        multiple = T
+      )
   })
   
   # Render content based on selected tab
