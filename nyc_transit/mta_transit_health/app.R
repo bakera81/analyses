@@ -65,6 +65,7 @@ ui <- page_sidebar(
   )
 )
 
+
 server <- function(input, output) {
   
   # Load all current realtime data
@@ -73,7 +74,10 @@ server <- function(input, output) {
       left_join(all_routes , by = "route_id")
       
     updated_at <- rt_alerts_data %>%
-      summarise(max_date = ymd_hms(max(date, na.rm = T))) %>%
+      summarise(
+        max_date = format(
+          max(date, na.rm = T),
+          "%Y-%m-%d %I:%M %p")) %>%
       pull(max_date)
     
     return(list(
@@ -92,6 +96,7 @@ server <- function(input, output) {
         start_time >= today() - 365) 
   })
   
+  
   selected_rt_alerts <- reactive({
     
     data <- get_gtfs_rt_alerts() %>%
@@ -102,7 +107,10 @@ server <- function(input, output) {
         service == current_service)
     
     updated_at <- data %>%
-      summarise(max_date = ymd_hms(max(date, na.rm = T))) %>%
+      summarise(
+        max_date = format(
+          max(date, na.rm = T),
+          "%Y-%m-%d %I:%M %p")) %>%
       pull(max_date)
     
     list(
@@ -110,7 +118,24 @@ server <- function(input, output) {
       updated_at = updated_at)
   })
   
+  
   output$route_title <- renderUI({
+    data <- selected_rt_alerts()
+    
+    n_alerts <- 
+      data$data %>%
+      count() %>%
+      pull(n)
+    
+    if (n_alerts == 0) {
+      n_alerts <- "no"
+    }
+      
+    current_service <-
+      tibble(now = now()) %>%
+      mutate_service(now) %>%
+      pull(service)
+    
     route_icon <- all_routes %>%
       filter(route_id == input$radio) %>%
       get_radio_choice_names()
@@ -118,28 +143,20 @@ server <- function(input, output) {
       titlePanel(
         tagList(
           route_icon, 
-          paste("How unusual is current", input$radio, "train service?")
+          paste("How unusual is", input$radio, "train service?")
       )),
-      tags$p(
-        tags$i("Last updated", selected_rt_alerts()$updated_at)
-      ),
+      card(
+        tags$p(list(
+          "There are currently ", tags$b(paste(n_alerts, "active alerts")), 
+           "for", current_service, input$radio, "trains.")),
+        tags$p(
+          tags$i("Last updated", data$updated_at)
+        ),  
+        min_height = 100
+      )
     )
   })
   
-  output$selected_route_alerts <- renderUI({
-    
-    accordion_list <- selected_rt_alerts()$data %>%
-      rename(
-        header = header__en,
-        description = description__en) %>%
-    pmap(alert_accordion_ui)
-      
-      accordion(
-        accordion_list,
-        open = F,
-        multiple = T
-      )
-  })
   
   output$past_alert_duration <- renderPlotly({
     p <- 
@@ -189,7 +206,23 @@ server <- function(input, output) {
     ggplotly(p, height = 400, dynamicTicks = TRUE) 
     
   })
-  
+
+
+  output$selected_route_alerts <- renderUI({
+    
+    accordion_list <- selected_rt_alerts()$data %>%
+      rename(
+        header = header__en,
+        description = description__en) %>%
+      pmap(alert_accordion_ui)
+    
+    accordion(
+      accordion_list,
+      open = F,
+      multiple = T
+    )
+  })
+
 }
 
 # Run the application 

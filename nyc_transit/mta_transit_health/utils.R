@@ -201,7 +201,7 @@ get_historical_alert_data <- function() {
     janitor::clean_names() %>%
     filter(agency == "NYCT Subway") %>%
     # TODO: REMOVE THIS
-    filter(str_detect(affected, "Q") | str_detect(affected, "D"))
+    filter(str_detect(affected, "1") | str_detect(affected, "Q") | str_detect(affected, "D"))
     # sample_n(1000)
   
   # Clean duration data
