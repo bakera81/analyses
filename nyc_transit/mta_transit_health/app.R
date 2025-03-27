@@ -9,12 +9,6 @@ source("utils.R")
 # Load historical (static) data
 alert_durations <- get_historical_alert_data()
 
-# Load current realtime data
-rt_alerts <- get_gtfs_rt_alerts()
-updated_at <- rt_alerts %>%
-  summarise(max_date = max(date, na.rm = T)) %>%
-  pull(max_date)
-
 # Identify the routes to display
 all_routes <- get_all_routes(alert_durations)
 
@@ -50,9 +44,6 @@ ui <- page_sidebar(
   
   # Main content
   uiOutput("route_title"),
-  tags$p(
-    tags$i("Last updated", updated_at)
-  ),
   card(
     plotlyOutput("past_alert_freq", height = 400),
     height = 450,
@@ -76,6 +67,21 @@ ui <- page_sidebar(
 
 server <- function(input, output) {
   
+  # Load all current realtime data
+  rt_alerts <- reactive({
+    rt_alerts_data <- get_gtfs_rt_alerts() %>%
+      left_join(all_routes , by = "route_id")
+      
+    updated_at <- rt_alerts_data %>%
+      summarise(max_date = ymd_hms(max(date, na.rm = T))) %>%
+      pull(max_date)
+    
+    return(list(
+      data = rt_alerts, 
+      updated_at = updated_at))
+  })
+    
+  
   selected_route_data <- reactive({
     alert_durations %>%
       # Based on the current time, determine the service (weekday / weeknight)
@@ -87,32 +93,42 @@ server <- function(input, output) {
   })
   
   selected_rt_alerts <- reactive({
-    rt_alerts %>%
+    
+    data <- get_gtfs_rt_alerts() %>%
+      left_join(all_routes , by = "route_id") %>%
       mutate_service(now(), "current_service") %>%
       filter(
         route_id == input$radio,
         service == current_service)
+    
+    updated_at <- data %>%
+      summarise(max_date = ymd_hms(max(date, na.rm = T))) %>%
+      pull(max_date)
+    
+    list(
+      data = data,
+      updated_at = updated_at)
   })
   
   output$route_title <- renderUI({
     route_icon <- all_routes %>%
       filter(route_id == input$radio) %>%
       get_radio_choice_names()
-    
-    titlePanel(
-      tagList(
-        route_icon, 
-        paste("How unusual is current", input$radio, "train service?")
-    ))
+    tagList(
+      titlePanel(
+        tagList(
+          route_icon, 
+          paste("How unusual is current", input$radio, "train service?")
+      )),
+      tags$p(
+        tags$i("Last updated", selected_rt_alerts()$updated_at)
+      ),
+    )
   })
   
   output$selected_route_alerts <- renderUI({
-    # selected_rt_alerts() %>%
-      accordion_list <- rt_alerts %>%
-      mutate_service(now(), "current_service") %>%
-      filter(
-        route_id == input$radio,
-        service == current_service) %>%
+    
+    accordion_list <- selected_rt_alerts()$data %>%
       rename(
         header = header__en,
         description = description__en) %>%
