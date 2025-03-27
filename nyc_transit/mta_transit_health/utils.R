@@ -205,6 +205,7 @@ get_historical_alert_data <- function() {
     # sample_n(1000)
   
   # Clean duration data
+  # TODO: save the cleaned data to decrease latency
   service_alerts %>%
     mutate(
       status_label = str_split(status_label, fixed(" | ")),
@@ -227,6 +228,36 @@ get_historical_alert_data <- function() {
     ungroup() %>%
     mutate(duration_est = end_time - start_time) %>%
     filter(start_time != end_time) 
+}
+
+get_historical_active_alert_days <- function(selected_route_data){
+  
+  date_range <- selected_route_data %>%
+    ungroup() %>%
+    summarise(
+      min_date = date(min(start_time, na.rm = T)),
+      max_date = date(max(end_time, na.rm = T))) 
+  
+  all_dates <- 
+    seq.Date(
+      from = date_range$min_date,
+      to = date_range$max_date,
+      by = 1)
+  
+  event_day <- selected_route_data %>%
+    distinct(event_id) %>%
+    crossing(date = all_dates)
+  
+  active_event_days <- event_day %>%
+    inner_join(
+      selected_route_data, by = "event_id"
+    ) %>%
+    filter(date >= date(start_time) & date <= date(end_time)) %>%
+    group_by(affected, service, date) %>%
+    summarise(
+      n_events = n(),
+      first_update_at = min(start_time, na.rm = T),
+      last_update_at = max(end_time, na.rm = T)) 
 }
 
 get_gtfs_rt_alerts <- function() {

@@ -45,12 +45,12 @@ ui <- page_sidebar(
   # Main content
   uiOutput("route_title"),
   card(
-    plotlyOutput("past_alert_freq", height = 400),
+    plotlyOutput("past_alert_vol", height = 400),
     height = 450,
     min_height = 450
   ),
   card(
-    plotlyOutput("past_alert_vol", height = 400),
+    plotlyOutput("past_alert_freq", height = 400),
     height = 450,
     min_height = 450
   ),
@@ -158,6 +158,34 @@ server <- function(input, output) {
   })
   
   
+  output$past_alert_vol <- renderPlotly({
+    
+    # test <- alert_durations %>%
+    #   # Based on the current time, determine the service (weekday / weeknight)
+    #   mutate_service(now(), "current_service") %>%
+    #   filter(
+    #     affected == "1",
+    #     service == current_service,
+    #     start_time >= today() - 365) 
+    
+    # TODO: is my GTFS RT listing alerts or events?
+    p <-
+      selected_route_data() %>% # Using the reactive dataset from above
+      get_historical_active_alert_days() %>%
+      ggplot(aes(date, n_events)) +
+      geom_col() +
+      labs(
+        title = "Active events per day",
+        x = "Date", 
+        y = "Active events"
+      )
+      theme_light()
+    
+    ggplotly(p, height = 400)
+    
+  })
+  
+  
   output$past_alert_duration <- renderPlotly({
     p <- 
       selected_route_data() %>%
@@ -177,19 +205,6 @@ server <- function(input, output) {
     ggplotly(p, height = 400) 
   })
   
-  
-  output$past_alert_vol <- renderPlotly({
-    
-    p <- 
-      selected_route_data() %>% # Using the reactive dataset from above
-      count(date = date(start_time)) %>%
-      ggplot(aes(date, n)) +
-      geom_col() +
-      theme_light()
-    
-    ggplotly(p, height = 400)
-    
-  })
   
   output$past_alert_freq <- renderPlotly({
     # TODO: update this to be number of concurrent alerts
