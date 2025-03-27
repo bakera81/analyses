@@ -11,6 +11,9 @@ alert_durations <- get_historical_alert_data()
 
 # Load current realtime data
 rt_alerts <- get_gtfs_rt_alerts()
+updated_at <- rt_alerts %>%
+  summarise(max_date = max(date, na.rm = T)) %>%
+  pull(max_date)
 
 # Identify the routes to display
 all_routes <- get_all_routes(alert_durations)
@@ -24,7 +27,7 @@ ui <- page_sidebar(
 
   # Application title
   # titlePanel("MTA Subway Alert Status"),
-  title = "MTA Subway Alert Status",
+  title = "Realtime MTA Subway Alert Explorer",
   
   # Sidebar
   sidebar = sidebar(
@@ -42,57 +45,32 @@ ui <- page_sidebar(
         inline = TRUE
       )
     ),
-    tags$style(HTML("
-    /* Hide the actual radio buttons */
-    #radio .shiny-options-group input[type='radio'] {
-      display: none;
-    }
-    
-    /* Style for unselected items */
-    #radio .shiny-options-group .radio-inline {
-      padding-left: 0;
-      margin-right: 0;
-      transition: opacity 0.2s ease, transform 0.2s ease;
-    }
-    
-    /* Style for selected item */
-    #radio .shiny-options-group .radio-inline.active {
-      transform: scale(1.05);
-    }
-    
-    /* Create the border box around selected items */
-    #radio .shiny-options-group .radio-inline.active::after {
-      content: '';
-      position: absolute;
-      top: -3px;
-      left: -3px;
-      right: -3px;
-      bottom: -3px;
-      border: 3px solid #ffffff;
-      border-radius: 50%;
-      box-shadow: 0 0 0 1px #000000; /* Add a thin black outline for better visibility */
-      pointer-events: none; /* Ensures the border doesn't interfere with clicks */
-    }
-    
-    /* Remove margin from shiny's default radio group */
-    #radio .shiny-options-group {
-      margin-left: 0;
-    }
-  "))
+    radio_ui_style(),
   ), 
   
   # Main content
-  card(
-    plotlyOutput("past_alert_freq")
+  uiOutput("route_title"),
+  tags$p(
+    tags$i("Last updated", updated_at)
   ),
   card(
-    plotlyOutput("past_alert_vol")
+    plotlyOutput("past_alert_freq", height = 400),
+    height = 450,
+    min_height = 450
   ),
   card(
-    plotlyOutput("past_alert_duration")
+    plotlyOutput("past_alert_vol", height = 400),
+    height = 450,
+    min_height = 450
   ),
   card(
-    uiOutput("selected_route_alerts")
+    plotlyOutput("past_alert_duration", height = 400),
+    height = 450,
+    min_height = 450
+  ),
+  card(
+    uiOutput("selected_route_alerts"),
+    min_height = 450
   )
 )
 
@@ -116,6 +94,18 @@ server <- function(input, output) {
         service == current_service)
   })
   
+  output$route_title <- renderUI({
+    route_icon <- all_routes %>%
+      filter(route_id == input$radio) %>%
+      get_radio_choice_names()
+    
+    titlePanel(
+      tagList(
+        route_icon, 
+        paste("How unusual is current", input$radio, "train service?")
+    ))
+  })
+  
   output$selected_route_alerts <- renderUI({
     # selected_rt_alerts() %>%
       accordion_list <- rt_alerts %>%
@@ -135,59 +125,9 @@ server <- function(input, output) {
       )
   })
   
-  # Render content based on selected tab
-  output$selected_route_content <- renderUI({
-    # Get the selected tab
-    selected_route <- input$nav_tabs_2
-    
-    # If it's the overview tab, show nothing or overview content
-    if(is.null(selected_route) || selected_route == "overview_tab") {
-      return(NULL)
-    }
-    
-    selected_rt_alerts <- rt_alerts %>%
-      filter(route_id == selected_route) 
-      
-    
-    # Format all alerts for current route
-    all_alert_taglist <- selected_rt_alerts %>%
-      pmap(function(header__en, description__en, ...) {
-        div(
-          class = "alert-item",
-          style = "margin-bottom: 15px;",
-          h4(header__en, style = "margin-bottom: 5px; color: #d9534f;"),
-          p(description__en)
-        )
-      }) %>%
-      tagList()
-      
-    
-    # Return detailed content for this route
-    tagList(
-      h3(paste("All current alerts for", selected_route, "trains")),
-      p(paste(
-        "Last updated ", 
-        selected_rt_alerts %>%
-          summarise(updated_at = max(date, na.rm = T)) %>%
-          pull(updated_at))),
-      plotlyOutput(outputId = "past_alert_freq"),
-      plotlyOutput("past_alert_vol"),
-      plotlyOutput("past_alert_duration"),
-      p(paste(
-        "There are", 
-        all_routes %>%
-          filter(route_id == selected_route) %>%
-          pull(active_alerts),
-        "current alerts:")),
-      all_alert_taglist
-    )
-  })
-  
-  
   output$past_alert_duration <- renderPlotly({
     p <- 
       selected_route_data() %>%
-      # alert_durations %>%
       mutate(
         duration_mins = as.numeric(duration_est) / 60,
         duration_hrs = as.numeric(duration_est) / (60 * 60)) %>%
@@ -201,7 +141,7 @@ server <- function(input, output) {
       theme(
         axis.text.x = element_text(angle = 45, hjust = 1))
     
-    ggplotly(p)
+    ggplotly(p, height = 400) 
   })
   
   
@@ -214,7 +154,7 @@ server <- function(input, output) {
       geom_col() +
       theme_light()
     
-    ggplotly(p)
+    ggplotly(p, height = 400)
     
   })
   
@@ -230,7 +170,7 @@ server <- function(input, output) {
       stat_ecdf() +
       theme_light()
     
-    ggplotly(p, dynamicTicks = TRUE)
+    ggplotly(p, height = 400, dynamicTicks = TRUE) 
     
   })
   
