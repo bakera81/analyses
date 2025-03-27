@@ -26,14 +26,62 @@ ui <- page_sidebar(
   # titlePanel("MTA Subway Alert Status"),
   title = "MTA Subway Alert Status",
   
-  # Route selector via sidebar
+  # Sidebar
   sidebar = sidebar(
-    radioButtons(
-      "radio", 
-      "Select a route:",
-      choiceNames = radio_choice_names,
-      choiceValues = radio_choice_values)
-  ),
+    tags$div(
+      style = "margin-bottom: 15px;",
+      tags$label("Select a route:", `for` = "radio")
+    ),
+    tags$div(
+      style = "display: flex; flex-wrap: wrap; gap: 8px;",
+      radioButtons(
+        "radio", 
+        label = NULL,
+        choiceNames = radio_choice_names,
+        choiceValues = radio_choice_values,
+        inline = TRUE
+      )
+    ),
+    tags$style(HTML("
+    /* Hide the actual radio buttons */
+    #radio .shiny-options-group input[type='radio'] {
+      display: none;
+    }
+    
+    /* Style for unselected items */
+    #radio .shiny-options-group .radio-inline {
+      padding-left: 0;
+      margin-right: 0;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    
+    /* Style for selected item */
+    #radio .shiny-options-group .radio-inline.active {
+      transform: scale(1.05);
+    }
+    
+    /* Create the border box around selected items */
+    #radio .shiny-options-group .radio-inline.active::after {
+      content: '';
+      position: absolute;
+      top: -3px;
+      left: -3px;
+      right: -3px;
+      bottom: -3px;
+      border: 3px solid #ffffff;
+      border-radius: 50%;
+      box-shadow: 0 0 0 1px #000000; /* Add a thin black outline for better visibility */
+      pointer-events: none; /* Ensures the border doesn't interfere with clicks */
+    }
+    
+    /* Remove margin from shiny's default radio group */
+    #radio .shiny-options-group {
+      margin-left: 0;
+    }
+  "))
+  ), 
+  
+  # Main content
   card(
     plotlyOutput("past_alert_freq")
   ),

@@ -4,22 +4,22 @@ library(jsonlite)
 
 use_virtualenv("r-nyc_transit")
 
-### UI HELPERS
+### UI HELPER FUNCTIONS
 
 subway_ui <- function(route_id, route_grouping, ...) {
-  subway_style <- paste0(
-    "
-        display: inline-flex;
-        justify-content: center;
-        align-items: center;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background-color:", route_grouping, ";
-        color: white;
-        font-size: 24px;
-        font-weight: bold;
-        ")
+  subway_style <- paste0("
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color:", route_grouping, ";
+      color: white;
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 5px;")
   
   tags$div(
     style = subway_style,
@@ -41,7 +41,7 @@ alert_accordion_ui <- function(header, description, ...) {
 }
 
 
-### DATA HELPERS
+### DATA HELPER FUNCTIONS
 
 mutate_service <- function(.tbl, date_col, service_col = "service") {
   service_col_name <- rlang::sym(service_col)
@@ -60,6 +60,7 @@ factorize_status_label <- function(.tbl, status_col) {
   # Create the join specification
   status_col_expr <- enquo(status_col)
   status_col_name <- quo_name(status_col_expr)
+  # Always join raw_status with the given column
   join_by <- setNames("raw_status", status_col_name)
   
   status_levels <- 
@@ -116,19 +117,39 @@ factorize_status_label <- function(.tbl, status_col) {
 }
 
 enrich_routes <- function(.tbl, route_col) {
+  sort_levels <- c(
+    "#EE352E",
+    "#00933C",
+    "#B933AD",
+    "#0039A6",
+    "#FF6319",
+    "#FCCC0A",
+    "#996633",
+    "#A7A9AC",
+    "#6CBE45",
+    "#808183"
+  )
+  
   .tbl %>%
     mutate(
       route_grouping = case_when(
-        {{ route_col }} %in% c("1", "2", "3") ~ "red",
-        {{ route_col }} %in% c("4", "5", "6", "6X") ~ "darkgreen",
-        {{ route_col }} %in% c("7", "7X") ~ "purple",
-        {{ route_col }} %in% c("A", "C", "E") ~ "blue",
-        {{ route_col }} %in% c("B", "D", "F", "M") ~ "darkorange",
-        {{ route_col }} %in% c("N", "Q", "R", "W") ~ "yellow",
-        {{ route_col }} %in% c("J", "Z") ~ "brown",
-        {{ route_col }} == "L" ~ "gray",
-        {{ route_col }} == "G" ~ "green",
-        TRUE ~ "other")) 
+        {{ route_col }} %in% c("1", "2", "3") ~ "#EE352E",
+        {{ route_col }} %in% c("4", "5", "6", "6X") ~ "#00933C",
+        {{ route_col }} %in% c("7", "7X") ~ "#B933AD",
+        {{ route_col }} %in% c("A", "C", "E") ~ "#0039A6",
+        {{ route_col }} %in% c("B", "D", "F", "M") ~ "#FF6319",
+        {{ route_col }} %in% c("N", "Q", "R", "W") ~ "#FCCC0A",
+        {{ route_col }} %in% c("J", "Z") ~ "#996633",
+        {{ route_col }} == "L" ~ "#A7A9AC",
+        {{ route_col }} == "G" ~ "#6CBE45",
+        {{ route_col }} == "S" ~ "#808183",
+        TRUE ~ "other")) %>%
+    mutate(
+      route_grouping_fct = factor(
+        route_grouping,
+        levels = sort_levels
+      )) %>%
+    arrange(route_grouping_fct)
 }
 
 
@@ -239,9 +260,10 @@ get_all_routes <- function(alert_durations) {
     left_join(
       rt_alerts, 
       by = "route_id") %>%
-    group_by(route_id, route_grouping) %>%
+    group_by(route_id, route_grouping, route_grouping_fct) %>%
     summarise(
       active_alerts = sum(!is.na(id)),
       headers = list(header__en)) %>%
-    select(-headers)
+    arrange(route_grouping_fct) %>%
+    select(-headers, -route_grouping_fct) 
 }
