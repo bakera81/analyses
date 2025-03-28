@@ -189,9 +189,15 @@ server <- function(input, output) {
     # Load the reactive data
     data <- selected_route_day_vol_data() 
     
+    # Get current alert volume
+    n_alerts <- 
+      selected_rt_alerts()$data %>%
+      count() %>%
+      pull(n)
+    
     # Create labels and breaks so we can bold today's date
     x_labels <- unique(data$day)
-    # TODO: ggtext is not rendering this via plotly
+    # TODO: ggtext is not rendering bolds via plotly
     # x_labels[window_size - 1] <- paste0("**", format(today(), "%b %d"), "**")
     x_labels[window_size - 1] <- paste0("Today - ", format(today(), "%b %d"))
     x_breaks <- data %>%
@@ -203,6 +209,14 @@ server <- function(input, output) {
       ggplot(aes(x_breaks_col, n_events, fill = factor(year))) +
       geom_col(
         position = position_dodge(preserve = "single")) +
+      geom_hline(
+        aes(yintercept = n_alerts, linetype = "Current status"),
+        color = "red"
+      ) + 
+      scale_linetype_manual(
+        name = "",
+        values = c("Current status" = "dashed")
+      ) +
       scale_x_continuous(
         breaks = x_breaks,
         labels = x_labels) +
@@ -220,20 +234,17 @@ server <- function(input, output) {
         fill = "Year"
       )
     
+    plt <- ggplotly(p)
     
-    # p <-
-    #   selected_route_data() %>% # Using the reactive dataset from above
-    #   get_historical_active_alert_days() %>%
-    #   ggplot(aes(date, n_events)) +
-    #   geom_col() +
-    #   labs(
-    #     title = "How many active alerts were there this time last year?",
-    #     subtitle = "Active events per day",
-    #     x = "Date", 
-    #     y = "Active events"
-    #   )
+    # Fix the legend text
+    for (i in seq_along(plt$x$data)) {
+      if (!is.null(plt$x$data[[i]]$name)) {
+        # Remove parentheses and ,1 from legend items
+        plt$x$data[[i]]$name <- gsub("\\(|\\)|,1", "", plt$x$data[[i]]$name)
+      }
+    }
     
-    ggplotly(p, height = 400)
+    plt
     
   })
   
