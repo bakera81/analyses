@@ -2,9 +2,14 @@
 library(shiny)
 library(bslib)
 library(plotly)
+library(scales)
+library(ggtext)
 
 # Load helper functions
 source("utils.R")
+
+# Set default ggplot theme
+theme_set(theme_light())
 
 # Load historical (static) data
 alert_durations <- get_historical_alert_data()
@@ -40,6 +45,15 @@ ui <- page_sidebar(
       )
     ),
     radio_ui_style(),
+    tags$hr(),
+    selectInput(
+      inputId = "period",
+      label = "Compare to:",
+      choices = c(
+         "Past 30 days" = 30, "Past year" = 365),
+      selected = 30,
+      multiple = F
+    )
   ), 
   
   # Main content
@@ -84,19 +98,8 @@ server <- function(input, output) {
       data = rt_alerts, 
       updated_at = updated_at))
   })
-    
   
-  selected_route_data <- reactive({
-    alert_durations %>%
-      # Based on the current time, determine the service (weekday / weeknight)
-      mutate_service(now(), "current_service") %>%
-      filter(
-        affected == input$radio,
-        service == current_service,
-        start_time >= today() - 365) 
-  })
-  
-  
+  # Load only realtime alerts for selected route
   selected_rt_alerts <- reactive({
     
     data <- get_gtfs_rt_alerts() %>%
@@ -116,6 +119,29 @@ server <- function(input, output) {
     list(
       data = data,
       updated_at = updated_at)
+  })
+    
+  # Get historical data for selected route and period
+  selected_route_day_vol_data <- reactive({
+    
+    # Set window size
+    window_size <- 7
+    
+    # TODO: is my GTFS RT data based on alerts or events?
+    alert_durations %>%
+      # Based on the current time, determine the service (weekday / weeknight)
+      mutate_service(now(), "current_service") %>%
+      filter(
+        affected == input$radio,
+        service == current_service,
+        start_time >= "2022-01-01",
+        yday(start_time) >= yday(today()) - window_size,
+        yday(start_time) <= yday(today()) + window_size) %>%
+      get_historical_active_alert_days() %>% 
+      mutate(
+        year = year(date),
+        day = format(date, "%b %d"),
+        x_breaks_col = ymd(format(date, "9999-%m-%d"))) 
   })
   
   
@@ -160,26 +186,52 @@ server <- function(input, output) {
   
   output$past_alert_vol <- renderPlotly({
     
-    # test <- alert_durations %>%
-    #   # Based on the current time, determine the service (weekday / weeknight)
-    #   mutate_service(now(), "current_service") %>%
-    #   filter(
-    #     affected == "1",
-    #     service == current_service,
-    #     start_time >= today() - 365) 
+    # Load the reactive data
+    data <- selected_route_day_vol_data() 
     
-    # TODO: is my GTFS RT listing alerts or events?
-    p <-
-      selected_route_data() %>% # Using the reactive dataset from above
-      get_historical_active_alert_days() %>%
-      ggplot(aes(date, n_events)) +
-      geom_col() +
+    # Create labels and breaks so we can bold today's date
+    x_labels <- unique(data$day)
+    # TODO: ggtext is not rendering this via plotly
+    # x_labels[window_size - 1] <- paste0("**", format(today(), "%b %d"), "**")
+    x_labels[window_size - 1] <- paste0("Today - ", format(today(), "%b %d"))
+    x_breaks <- data %>%
+      distinct(x_breaks_col = ymd(format(date, "9999-%m-%d"))) %>%
+      pull(x_breaks_col)
+    
+    p <- data %>%
+      # Use a funky date col to keep the X axis ordered correctly
+      ggplot(aes(x_breaks_col, n_events, fill = factor(year))) +
+      geom_col(
+        position = position_dodge(preserve = "single")) +
+      scale_x_continuous(
+        breaks = x_breaks,
+        labels = x_labels) +
+      scale_y_continuous(breaks = pretty_breaks()) + 
+      scale_fill_brewer() + 
+      theme(
+        axis.text.x = element_markdown(angle = 45, hjust = 1)) +
       labs(
-        title = "Active events per day",
-        x = "Date", 
-        y = "Active events"
+        title = "Past daily active alerts",
+        subtitle = paste(
+          "Active events per day for", 
+          get_current_service(), input$radio, "trains"),
+        x = "", 
+        y = "Active events",
+        fill = "Year"
       )
-      theme_light()
+    
+    
+    # p <-
+    #   selected_route_data() %>% # Using the reactive dataset from above
+    #   get_historical_active_alert_days() %>%
+    #   ggplot(aes(date, n_events)) +
+    #   geom_col() +
+    #   labs(
+    #     title = "How many active alerts were there this time last year?",
+    #     subtitle = "Active events per day",
+    #     x = "Date", 
+    #     y = "Active events"
+    #   )
     
     ggplotly(p, height = 400)
     

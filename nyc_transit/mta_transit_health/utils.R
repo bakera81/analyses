@@ -94,6 +94,13 @@ mutate_service <- function(.tbl, date_col, service_col = "service") {
         TRUE ~ "weeknight"))   
 }
 
+get_current_service <- function() {
+  case_when(
+    wday(today(), week_start = 1) >= 6 ~ "weekend",
+    hour(now()) >= 5 ~ "weekday",
+    TRUE ~ "weeknight")   
+}
+
 
 factorize_status_label <- function(.tbl, status_col) {
   
@@ -248,7 +255,8 @@ get_historical_active_alert_days <- function(selected_route_data){
     distinct(event_id) %>%
     crossing(date = all_dates)
   
-  active_event_days <- event_day %>%
+  # active_event_days <- 
+  event_day %>%
     inner_join(
       selected_route_data, by = "event_id"
     ) %>%
@@ -258,6 +266,7 @@ get_historical_active_alert_days <- function(selected_route_data){
       n_events = n(),
       first_update_at = min(start_time, na.rm = T),
       last_update_at = max(end_time, na.rm = T)) 
+  
 }
 
 get_gtfs_rt_alerts <- function() {
