@@ -10,9 +10,9 @@ def get_mta_alerts():
   response = requests.get(url)
   feed.ParseFromString(response.content)
   
-  for entity in feed.entity:
-      if entity.HasField('trip_update'):
-          print(entity.trip_update)
+  # for entity in feed.entity:
+  #     if entity.HasField('trip_update'):
+  #         print(entity.trip_update)
   
   entity_list = [MessageToDict(entity) for entity in feed.entity]
   entity_json = json.dumps(entity_list)

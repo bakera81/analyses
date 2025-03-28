@@ -76,7 +76,7 @@ get_radio_choice_names <- function(all_routes) {
 alert_accordion_ui <- function(header, description, ...) {
   accordion_panel(
     title = header,
-    p(description)
+    tags$p(description)
   )
 }
 
@@ -201,6 +201,43 @@ enrich_routes <- function(.tbl, route_col) {
 
 
 get_historical_alert_data <- function() {
+  # Fetch data
+  # https://catalog.data.gov/dataset/mta-service-alerts-beginning-april-2020
+  service_alerts <- 
+    read_csv("../MTA_Service_Alerts__Beginning_April_2020.csv") %>%
+    janitor::clean_names() %>%
+    filter(agency == "NYCT Subway") %>%
+    # TODO: REMOVE THIS
+    filter(str_detect(affected, "1") | str_detect(affected, "Q") | str_detect(affected, "D"))
+  # sample_n(1000)
+  
+  # Assumption: the alerts are only in affect if there is an update posted on the day
+  # Clean duration data
+  # TODO: save the cleaned data to decrease latency
+  service_alerts %>%
+    mutate(
+      status_label = str_split(status_label, fixed(" | ")),
+      affected = str_split(affected, fixed(" | ")),
+      date = mdy_hms(date)) %>%
+    mutate_service(date) %>%
+    unnest(status_label) %>%
+    unnest(affected) %>%
+    factorize_status_label(status_label) %>%
+    group_by(service, affected, date = date(date)) %>%
+    summarise(
+      n_alerts = n_distinct(alert_id),
+      # update_number is the highest update number for the corresponding event 
+      #   that had an alert within the day.
+      update_number = max(update_number, na.rm = T),
+      most_minor_alert = 
+        levels(simplified_status)[min(as.integer(simplified_status))],
+      most_major_alert = 
+        levels(simplified_status)[max(as.integer(simplified_status))],
+      all_alert_statuses = paste(simplified_status, collapse = ","))
+}
+
+# Aggregated by the event causing the alerts
+get_historical_event_data <- function() {
   # Fetch data
   # https://catalog.data.gov/dataset/mta-service-alerts-beginning-april-2020
   service_alerts <- 

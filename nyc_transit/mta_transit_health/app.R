@@ -12,10 +12,10 @@ source("utils.R")
 theme_set(theme_light())
 
 # Load historical (static) data
-alert_durations <- get_historical_alert_data()
+alert_counts <- get_historical_alert_data()
 
 # Identify the routes to display
-all_routes <- get_all_routes(alert_durations)
+all_routes <- get_all_routes(alert_counts)
 
 # Populate and style radio buttons
 radio_choice_names <- get_radio_choice_names(all_routes)
@@ -127,17 +127,17 @@ server <- function(input, output) {
     # Set window size
     window_size <- 7
     
-    # TODO: is my GTFS RT data based on alerts or events?
-    alert_durations %>%
+    alert_counts %>%
+    # alert_durations %>%
       # Based on the current time, determine the service (weekday / weeknight)
       mutate_service(now(), "current_service") %>%
       filter(
         affected == input$radio,
         service == current_service,
-        start_time >= "2022-01-01",
-        yday(start_time) >= yday(today()) - window_size,
-        yday(start_time) <= yday(today()) + window_size) %>%
-      get_historical_active_alert_days() %>% 
+        date >= "2022-01-01",
+        yday(date) >= yday(today()) - window_size,
+        yday(date) <= yday(today()) + window_size) %>%
+      # get_historical_active_alert_days() %>% 
       mutate(
         year = year(date),
         day = format(date, "%b %d"),
@@ -190,7 +190,7 @@ server <- function(input, output) {
     data <- selected_route_day_vol_data() 
     
     # Get current alert volume
-    n_alerts <- 
+    n_current_alerts <- 
       selected_rt_alerts()$data %>%
       count() %>%
       pull(n)
@@ -206,16 +206,16 @@ server <- function(input, output) {
     
     p <- data %>%
       # Use a funky date col to keep the X axis ordered correctly
-      ggplot(aes(x_breaks_col, n_events, fill = factor(year))) +
+      ggplot(aes(x_breaks_col, n_alerts, fill = factor(year))) +
       geom_col(
         position = position_dodge(preserve = "single")) +
       geom_hline(
-        aes(yintercept = n_alerts, linetype = "Current status"),
+        aes(yintercept = n_current_alerts, linetype = "Current"),
         color = "red"
       ) + 
       scale_linetype_manual(
         name = "",
-        values = c("Current status" = "dashed")
+        values = c("Current" = "dashed")
       ) +
       scale_x_continuous(
         breaks = x_breaks,
@@ -226,10 +226,10 @@ server <- function(input, output) {
         axis.text.x = element_markdown(angle = 45, hjust = 1)) +
       labs(
         title = paste(
-          "Daily active events for", 
+          "Daily active alerts for", 
           get_current_service(), input$radio, "trains"),
         x = "", 
-        y = "Active events",
+        y = "Alerts",
         fill = "Year"
       )
     
