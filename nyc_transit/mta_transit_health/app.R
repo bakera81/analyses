@@ -225,9 +225,8 @@ server <- function(input, output) {
       theme(
         axis.text.x = element_markdown(angle = 45, hjust = 1)) +
       labs(
-        title = "Past daily active alerts",
-        subtitle = paste(
-          "Active events per day for", 
+        title = paste(
+          "Daily active events for", 
           get_current_service(), input$radio, "trains"),
         x = "", 
         y = "Active events",
