@@ -125,23 +125,37 @@ server <- function(input, output) {
   selected_route_day_vol_data <- reactive({
     
     # Set window size
-    window_size <- 7
+    window_size <- 14
     
-    alert_counts %>%
-    # alert_durations %>%
+    selected_alert_counts <-
+      alert_counts %>%
       # Based on the current time, determine the service (weekday / weeknight)
       mutate_service(now(), "current_service") %>%
       filter(
         affected == input$radio,
-        service == current_service,
-        date >= "2022-01-01",
-        yday(date) >= yday(today()) - window_size,
-        yday(date) <= yday(today()) + window_size) %>%
-      # get_historical_active_alert_days() %>% 
-      mutate(
-        year = year(date),
-        day = format(date, "%b %d"),
-        x_breaks_col = ymd(format(date, "9999-%m-%d"))) 
+        service == get_current_service(),
+        date >= "2022-01-01") %>%
+      mutate_date_parts(date)
+    
+    # Expand to include non-service days
+    # This ensures that we have all days, even if there were no alerts
+    all_dates <- tibble(
+      date = seq.Date(
+        from = today() - window_size,
+        to = today() + window_size,
+        by = 1)) %>%
+      mutate_date_parts(date) %>%
+      select(-date, -year) 
+    
+    selected_alert_counts %>%
+      inner_join(
+        all_dates,
+        by = c("month", "week_of_month", "day_of_week")) %>%
+      select(
+        service, affected, month, week_of_month, day_of_week, 
+        year, date, everything()) %>%
+      arrange(month, week_of_month, day_of_week)
+
   })
   
   
@@ -195,18 +209,29 @@ server <- function(input, output) {
       count() %>%
       pull(n)
     
-    # Create labels and breaks so we can bold today's date
-    x_labels <- unique(data$day)
-    # TODO: ggtext is not rendering bolds via plotly
-    # x_labels[window_size - 1] <- paste0("**", format(today(), "%b %d"), "**")
-    x_labels[window_size - 1] <- paste0("Today - ", format(today(), "%b %d"))
-    x_breaks <- data %>%
-      distinct(x_breaks_col = ymd(format(date, "9999-%m-%d"))) %>%
-      pull(x_breaks_col)
+    # TODO: Make window size an input
+    window_size = 14
     
-    p <- data %>%
+    p <-
+      data %>%
       # Use a funky date col to keep the X axis ordered correctly
-      ggplot(aes(x_breaks_col, n_alerts, fill = factor(year))) +
+      mutate(
+        yoy_comp_date = paste(
+          month(month, label = T), 
+          "week", week_of_month, 
+          wday(day_of_week, label = T, week_start = 7)),
+        yoy_comp_date = if_else(
+          month == month(today()) &
+            week_of_month == ceiling(day(today()) / 7) &
+            day_of_week == wday(today(), week_start = 7),
+          paste("(Today)", yoy_comp_date),
+          yoy_comp_date)) %>%
+      arrange(month, week_of_month, day_of_week) %>%
+      mutate(yoy_comp_date = factor(
+        yoy_comp_date, 
+        levels = unique(yoy_comp_date), 
+        ordered = T)) %>%
+      ggplot(aes(yoy_comp_date, n_alerts, fill = factor(year))) +
       geom_col(
         position = position_dodge(preserve = "single")) +
       geom_hline(
@@ -217,23 +242,23 @@ server <- function(input, output) {
         name = "",
         values = c("Current" = "dashed")
       ) +
-      scale_x_continuous(
-        breaks = x_breaks,
-        labels = x_labels) +
+      # scale_x_continuous(
+      #   breaks = x_breaks,
+      #   labels = x_labels) +
       scale_y_continuous(breaks = pretty_breaks()) + 
       scale_fill_brewer() + 
       theme(
         axis.text.x = element_markdown(angle = 45, hjust = 1)) +
       labs(
         title = paste(
-          "Daily active alerts for", 
+          "Alerts per day for", 
           get_current_service(), input$radio, "trains"),
         x = "", 
         y = "Alerts",
         fill = "Year"
       )
     
-    plt <- ggplotly(p)
+  plt <- ggplotly(p)
     
     # Fix the legend text
     for (i in seq_along(plt$x$data)) {

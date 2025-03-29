@@ -89,14 +89,14 @@ mutate_service <- function(.tbl, date_col, service_col = "service") {
   .tbl %>%
     mutate(
       !!service_col_name := case_when(
-        wday({{ date_col }}, week_start = 1) >= 6 ~ "weekend",
+        wday({{ date_col }}, week_start = 7) >= 6 ~ "weekend",
         hour({{ date_col }}) >= 5 ~ "weekday",
         TRUE ~ "weeknight"))   
 }
 
 get_current_service <- function() {
   case_when(
-    wday(today(), week_start = 1) >= 6 ~ "weekend",
+    wday(today(), week_start = 7) >= 6 ~ "weekend",
     hour(now()) >= 5 ~ "weekday",
     TRUE ~ "weeknight")   
 }
@@ -383,4 +383,24 @@ get_all_routes <- function(alert_durations) {
       headers = list(header__en)) %>%
     arrange(route_grouping_fct) %>%
     select(-headers, -route_grouping_fct) 
+}
+
+get_real_window_size <- function(window_size, current_service = get_current_service()) {
+  current_service_days <- c(
+    "weekday" = 5,
+    "weeknight" = 5,
+    "weekend" = 2
+  )
+  
+  ceiling(7 / current_service_days[[current_service]] * window_size)
+  
+}
+
+mutate_date_parts <- function(.tbl, date_col) {
+  .tbl %>%
+    mutate(
+      year = year({{ date_col }}),
+      month = month({{ date_col }}),
+      week_of_month = ceiling(day({{ date_col }}) / 7),
+      day_of_week = wday({{ date_col }}, week_start = 7))
 }
