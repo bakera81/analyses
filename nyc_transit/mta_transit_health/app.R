@@ -3,7 +3,6 @@ library(shiny)
 library(bslib)
 library(plotly)
 library(scales)
-library(ggtext)
 
 # Load helper functions
 source("utils.R")
@@ -83,23 +82,24 @@ ui <- page_sidebar(
 server <- function(input, output) {
   
   # Load all current realtime data
-  rt_alerts <- reactive({
-    rt_alerts_data <- get_gtfs_rt_alerts() %>%
-      left_join(all_routes , by = "route_id")
-      
-    updated_at <- rt_alerts_data %>%
-      summarise(
-        max_date = format(
-          max(date, na.rm = T),
-          "%Y-%m-%d %I:%M %p")) %>%
-      pull(max_date)
-    
-    return(list(
-      data = rt_alerts, 
-      updated_at = updated_at))
-  })
+  # rt_alerts <- reactive({
+  #   
+  #   rt_alerts_data <- get_gtfs_rt_alerts() %>%
+  #     left_join(all_routes , by = "route_id")
+  #     
+  #   updated_at <- rt_alerts_data %>%
+  #     summarise(
+  #       max_date = format(
+  #         max(date, na.rm = T),
+  #         "%Y-%m-%d %I:%M %p")) %>%
+  #     pull(max_date)
+  #   
+  #   return(list(
+  #     data = rt_alerts, 
+  #     updated_at = updated_at))
+  # })
   
-  # Load only realtime alerts for selected route
+  # Load realtime alerts for selected route & service
   selected_rt_alerts <- reactive({
     
     data <- get_gtfs_rt_alerts() %>%
@@ -184,13 +184,12 @@ server <- function(input, output) {
     }
       
     current_service <-
-      tibble(now = now()) %>%
-      mutate_service(now) %>%
-      pull(service)
+      get_current_service()
     
     route_icon <- all_routes %>%
       filter(route_id == input$radio) %>%
       get_radio_choice_names()
+    
     tagList(
       titlePanel(
         tagList(
@@ -258,7 +257,7 @@ server <- function(input, output) {
       scale_y_continuous(breaks = pretty_breaks()) + 
       scale_fill_brewer() + 
       theme(
-        axis.text.x = element_markdown(angle = 45, hjust = 1)) +
+        axis.text.x = element_text(angle = 45, hjust = 1)) +
       labs(
         title = paste(
           "Alerts per day for", 
@@ -284,9 +283,6 @@ server <- function(input, output) {
   
   
   output$alert_vol_ecdf <- renderPlotly({
-    
-    # Load the reactive data
-    # data <- selected_route_day_vol_data() 
     
     # Get current alert volume
     n_current_alerts <- 
@@ -329,15 +325,6 @@ server <- function(input, output) {
         linetype = "dashed",
         color = "red"
       ) + 
-      # Plotly doesn't respect geom_label
-      # annotate(
-      #   "label",
-      #   x = 1,
-      #   y = today_y,
-      #   label = round(today_y, 2),
-      #   color = "red",
-      #   vjust = -3
-      # ) +
       labs(
         title = paste(
           "ECDF: Alerts per day for", 
@@ -347,6 +334,7 @@ server <- function(input, output) {
       )
     
     ggplotly(p) %>%
+      # Plotly doesn't respect geom_label, add the label directly
       layout(
         annotations = list(
           list(
@@ -383,6 +371,7 @@ server <- function(input, output) {
         # date = floor_date(date, "month")) %>%
       ggplot(aes(date, n_alerts, color = year, group = year)) + 
       geom_smooth() + 
+      expand_limits(y = 0) + 
       facet_wrap(~year, scales = "free_x", nrow = 1) + 
       scale_y_continuous(breaks = pretty_breaks()) + 
       labs(
@@ -393,7 +382,17 @@ server <- function(input, output) {
       theme(
         axis.text.x = element_text(angle = 45, hjust = 1))
     
-    ggplotly(p)
+    plt <- ggplotly(p)
+    
+    # Fix the legend text
+    for (i in seq_along(plt$x$data)) {
+      if (!is.null(plt$x$data[[i]]$name)) {
+        # Remove parentheses and ,1 from legend items
+        plt$x$data[[i]]$name <- gsub("\\(|\\)|,1", "", plt$x$data[[i]]$name)
+      }
+    }
+    
+    plt
       
     
   })

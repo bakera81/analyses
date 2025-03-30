@@ -89,14 +89,14 @@ mutate_service <- function(.tbl, date_col, service_col = "service") {
   .tbl %>%
     mutate(
       !!service_col_name := case_when(
-        wday({{ date_col }}, week_start = 7) >= 6 ~ "weekend",
+        wday({{ date_col }}, week_start = 7) %in% c(7, 1) ~ "weekend",
         hour({{ date_col }}) >= 5 ~ "weekday",
         TRUE ~ "weeknight"))   
 }
 
 get_current_service <- function() {
   case_when(
-    wday(today(), week_start = 7) >= 6 ~ "weekend",
+    wday(today(), week_start = 7) %in% c(7, 1) ~ "weekend",
     hour(now()) >= 5 ~ "weekday",
     TRUE ~ "weeknight")   
 }
@@ -200,21 +200,23 @@ enrich_routes <- function(.tbl, route_col) {
 }
 
 
-get_historical_alert_data <- function() {
+# Saves an RDS file
+clean_historical_alert_data <- function() {
   # Fetch data
   # https://catalog.data.gov/dataset/mta-service-alerts-beginning-april-2020
   service_alerts <- 
-    read_csv("../MTA_Service_Alerts__Beginning_April_2020.csv") %>%
+    read_csv("MTA_Service_Alerts__Beginning_April_2020.csv") %>%
     janitor::clean_names() %>%
-    filter(agency == "NYCT Subway") %>%
+    filter(agency == "NYCT Subway") 
     # TODO: REMOVE THIS
-    filter(str_detect(affected, "1") | str_detect(affected, "Q") | str_detect(affected, "D"))
+    # filter(str_detect(affected, "1") | str_detect(affected, "Q") | str_detect(affected, "D"))
   # sample_n(1000)
   
   # Assumption: the alerts are only in affect if there is an update posted on the day
   # Clean duration data
   # TODO: save the cleaned data to decrease latency
-  service_alerts %>%
+  cleaned_service_alerts <- 
+    service_alerts %>%
     mutate(
       status_label = str_split(status_label, fixed(" | ")),
       affected = str_split(affected, fixed(" | ")),
@@ -234,6 +236,13 @@ get_historical_alert_data <- function() {
       most_major_alert = 
         levels(simplified_status)[max(as.integer(simplified_status))],
       all_alert_statuses = paste(simplified_status, collapse = ","))
+  
+  saveRDS(cleaned_service_alerts, "./cleaned_service_alerts.rds")
+}
+
+# Reads and RDS file
+get_historical_alert_data <- function() {
+  readRDS("cleaned_service_alerts.rds")
 }
 
 # Aggregated by the event causing the alerts
@@ -307,7 +316,7 @@ get_historical_active_alert_days <- function(selected_route_data){
 }
 
 get_gtfs_rt_alerts <- function() {
-  source_python("../gtfs_rt.py")
+  source_python("gtfs_rt.py")
   
   alerts_json <- get_mta_alerts() %>%
     jsonlite::fromJSON(flatten = T)
@@ -370,19 +379,23 @@ get_gtfs_rt_alerts <- function() {
     mutate_service(date)
 }
 
-get_all_routes <- function(alert_durations) {
-  alert_durations %>%
+get_all_routes <- function(past_alerts) {
+  
+  past_alerts %>%
+    ungroup() %>%
     distinct(route_id = affected) %>%
     enrich_routes(route_id) %>%
-    left_join(
-      rt_alerts, 
-      by = "route_id") %>%
-    group_by(route_id, route_grouping, route_grouping_fct) %>%
-    summarise(
-      active_alerts = sum(!is.na(id)),
-      headers = list(header__en)) %>%
-    arrange(route_grouping_fct) %>%
-    select(-headers, -route_grouping_fct) 
+    select(-route_grouping_fct)
+    # distinct(route_id, route_grouping)
+    # left_join(
+    #   rt_alerts, 
+    #   by = "route_id") %>%
+    # group_by(route_id, route_grouping, route_grouping_fct) %>%
+    # summarise(
+    #   active_alerts = sum(!is.na(id)),
+    #   headers = list(header__en)) %>%
+    # arrange(route_grouping_fct) %>%
+    # select(-headers, -route_grouping_fct) 
 }
 
 get_real_window_size <- function(window_size, current_service = get_current_service()) {
