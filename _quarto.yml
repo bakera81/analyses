@@ -4,7 +4,6 @@ project:
   render:
     - "*.qmd"
     - "!drafts/"
-    - "!tidy_tuesday_nyc_elevators/"
     - "!nyc_transit/" # This is a shiny dashboard, no .qmd needed
 execute: 
   freeze: auto
