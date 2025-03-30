@@ -69,7 +69,7 @@ ui <- page_sidebar(
     min_height = 450
   ),
   card(
-    plotlyOutput("past_alert_duration", height = 400),
+    plotlyOutput("alert_vol_by_year", height = 400),
     height = 450,
     min_height = 450
   ),
@@ -120,9 +120,21 @@ server <- function(input, output) {
       data = data,
       updated_at = updated_at)
   })
+  
+  # Get filtered alert data for current route and period
+  selected_route_alerts <- reactive({
+    alert_counts %>%
+      # Based on the current time, determine the service (weekday / weeknight)
+      mutate_service(now(), "current_service") %>%
+      filter(
+        affected == input$radio,
+        service == get_current_service(),
+        date >= "2022-01-01") 
+      # mutate_date_parts(date)
+  })
     
-  # Get historical data for selected route and period
-  selected_route_day_vol_data <- reactive({
+  # Get filtered alert data within a specific window
+  selected_route_alerts_in_window <- reactive({
     
     # Set window size
     window_size <- 14
@@ -201,7 +213,7 @@ server <- function(input, output) {
   output$past_alert_vol <- renderPlotly({
     
     # Load the reactive data
-    data <- selected_route_day_vol_data() 
+    data <- selected_route_alerts_in_window() 
     
     # Get current alert volume
     n_current_alerts <- 
@@ -283,7 +295,7 @@ server <- function(input, output) {
       pull(n)
     
     p_ecdf <- 
-      selected_route_day_vol_data() %>%
+      selected_route_alerts() %>%
       ggplot(aes(n_alerts)) + 
       stat_ecdf()
       
@@ -349,6 +361,40 @@ server <- function(input, output) {
             bordercolor = "red",
             borderwidth = 2,
             borderpad = 4)))
+    
+  })
+  
+  
+  output$alert_vol_by_year <- renderPlotly({
+    
+    # Get current alert volume
+    n_current_alerts <- 
+      selected_rt_alerts()$data %>%
+      count() %>%
+      pull(n)
+    
+    p <- 
+      selected_route_alerts() %>%
+      filter(date < "2025-01-01") %>%
+      group_by(
+        service, 
+        affected, 
+        year = factor(year(date))) %>%
+        # date = floor_date(date, "month")) %>%
+      ggplot(aes(date, n_alerts, color = year, group = year)) + 
+      geom_smooth() + 
+      facet_wrap(~year, scales = "free_x", nrow = 1) + 
+      scale_y_continuous(breaks = pretty_breaks()) + 
+      labs(
+        title = "Alerts per day",
+        x = "",
+        y = "Number of alerts", 
+        color = "Year") +
+      theme(
+        axis.text.x = element_text(angle = 45, hjust = 1))
+    
+    ggplotly(p)
+      
     
   })
   
