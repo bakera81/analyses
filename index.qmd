@@ -10,26 +10,30 @@ Anthony W. Baker
 
 :::::: grid
 ::: g-col-4
+![](nyc_transit/dashboard_screenshot.png)
+
+[**Realtime GTFS Subway Alerts Dashboard**](https://bakerlabs.shinyapps.io/mta_transit_health/)
+
+Realtime dashboard using GTFS data to explore current NYC subway alerts.
+:::
+
+::: g-col-4
+![3D rendering](tidy_tuesday_nyc_elevators/rayshader_rendering.png)
 [**Tidy Tuesday: NYC Elevators**](/tidy_tuesday_nyc_elevators/tidy_tuesday_nyc_elevators.qmd)
 
 Exploring the tallest and fastest elevators in the five boroughs.
 :::
 
 ::: g-col-4
+![Great Tables example](septa_transit_times/gt_screenshot.png)
 [**SEPTA Transit Timetables**](septa_transit_times/septa-timetables.qmd)
 
 Using Great Tables to style presentation-worthy transit data.
-:::
-
-::: g-col-4
-![](https://via.placeholder.com/100)
-
-[**Page 3**](page3.qmd)
-
-Details about the third topic.
 :::
 ::::::
 
 ## All
 
+- [Realtime GTFS Subway Alerts Dashboard](https://bakerlabs.shinyapps.io/mta_transit_health/): Realtime dashboard using GTFS data to explore current NYC subway alerts.
 -   [NYC Elevators](/tidy_tuesday_nyc_elevators/tidy_tuesday_nyc_elevators.qmd): Exploring the tallest and fastest elevators in NYC.
+- [SEPTA Transit Timetables](septa_transit_times/septa-timetables.qmd): Using Great Tables to style presentation-worthy transit data.

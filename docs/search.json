@@ -138,7 +138,7 @@
     "href": "index.html#featured",
     "title": "Data Analysis Portfolio",
     "section": "Featured",
-    "text": "Featured\n\n\nTidy Tuesday: NYC Elevators\nExploring the tallest and fastest elevators in the five boroughs.\n\n\nSEPTA Transit Timetables\nUsing Great Tables to style presentation-worthy transit data.\n\n\n\nPage 3\nDetails about the third topic.",
+    "text": "Featured\n\n\n\nRealtime GTFS Subway Alerts Dashboard\nRealtime dashboard using GTFS data to explore current NYC subway alerts.\n\n\n Tidy Tuesday: NYC Elevators\nExploring the tallest and fastest elevators in the five boroughs.\n\n\n SEPTA Transit Timetables\nUsing Great Tables to style presentation-worthy transit data.",
     "crumbs": [
       "Home"
     ]
@@ -148,7 +148,7 @@
     "href": "index.html#all",
     "title": "Data Analysis Portfolio",
     "section": "All",
-    "text": "All\n\nNYC Elevators: Exploring the tallest and fastest elevators in NYC.",
+    "text": "All\n\nRealtime GTFS Subway Alerts Dashboard: Realtime dashboard using GTFS data to explore current NYC subway alerts.\nNYC Elevators: Exploring the tallest and fastest elevators in NYC.\nSEPTA Transit Timetables: Using Great Tables to style presentation-worthy transit data.",
     "crumbs": [
       "Home"
     ]

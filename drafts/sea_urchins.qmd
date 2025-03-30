@@ -1,0 +1,58 @@
+---
+title: "Sea Urchins"
+format: html
+editor: visual
+---
+
+## Quarto
+
+```{r}
+library(tidymodels)
+
+library(readr)
+library(broom.mixed)
+library(dotwhisker)
+```
+
+From [tidymodels](https://www.tidymodels.org/start/models/?plugin_version=chrome_4.0.0).
+
+```{r}
+urchins <-
+  read_csv("https://tidymodels.org/start/models/urchins.csv") %>% 
+  setNames(c("food_regime", "initial_volume", "width")) %>% 
+  mutate(food_regime = factor(food_regime, levels = c("Initial", "Low", "High")))
+```
+
+```{r}
+urchins %>%
+  ggplot(aes(
+    x = initial_volume, 
+    y = width, 
+    group = food_regime, 
+    col = food_regime)) + 
+  geom_point() + 
+  geom_smooth(method = lm, se = F) +
+  scale_color_viridis_d(option = "plasma", end = .7)
+```
+
+```{r}
+lm_fit <- 
+  linear_reg() %>%
+  fit(width ~ initial_volume * food_regime, data = urchins) 
+
+lm_fit %>%
+  tidy()
+
+
+```
+
+```{r}
+
+lm_fit %>%
+  tidy() %>%
+  dwplot(
+    dot_args = list(size = 2, color = "black"),
+    whisker_args = list(color = "black"),
+    vline = geom_vline(xintercept = 0, colour = "grey50", linetype = 2))
+
+```

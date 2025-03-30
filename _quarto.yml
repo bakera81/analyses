@@ -1,7 +1,14 @@
 project:
   type: website
   output-dir: docs
-
+  render:
+    - "*.qmd"
+    - "!drafts/"
+    - "!tidy_tuesday_nyc_elevators/"
+    - "!nyc_transit/" # This is a shiny dashboard, no .qmd needed
+execute: 
+  freeze: auto
+  cache: true
 website:
   title: "Data Analysis Portfolio"
   site-url: https://analyses.anthony.computer
@@ -18,6 +25,8 @@ website:
         text: Home
       - section: "Analyses"
         contents:
+          - href: https://bakerlabs.shinyapps.io/mta_transit_health/
+            text: Realtime GTFS Subway Alerts dashboard
           - tidy_tuesday_nyc_elevators/tidy_tuesday_nyc_elevators.qmd
           - septa_transit_times/septa-timetables.qmd
       - section: "More from Anthony"
