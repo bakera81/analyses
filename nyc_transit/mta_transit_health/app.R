@@ -44,15 +44,15 @@ ui <- page_sidebar(
       )
     ),
     radio_ui_style(),
-    tags$hr(),
-    selectInput(
-      inputId = "period",
-      label = "Compare to:",
-      choices = c(
-         "Past 30 days" = 30, "Past year" = 365),
-      selected = 30,
-      multiple = F
-    )
+    tags$hr()
+    # selectInput(
+    #   inputId = "period",
+    #   label = "Compare to:",
+    #   choices = c(
+    #      "Past 30 days" = 30, "Past year" = 365),
+    #   selected = 30,
+    #   multiple = F
+    # )
   ), 
   
   # Main content
@@ -73,6 +73,7 @@ ui <- page_sidebar(
     min_height = 450
   ),
   card(
+    tags$h2("Current alerts"),
     uiOutput("selected_route_alerts"),
     min_height = 450
   )

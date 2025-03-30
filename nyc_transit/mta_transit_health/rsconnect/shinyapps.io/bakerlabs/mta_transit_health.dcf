@@ -1,0 +1,12 @@
+name: mta_transit_health
+title: mta_transit_health
+username: bakerlabs
+account: bakerlabs
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 14378219
+bundleId:
+url: https://bakerlabs.shinyapps.io/mta_transit_health/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE

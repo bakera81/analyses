@@ -2,6 +2,12 @@ library(tidyverse)
 library(reticulate)
 library(jsonlite)
 
+virtualenv_create("r-nyc_transit")
+virtualenv_install(
+  "r-nyc_transit", 
+  packages = c(
+    "gtfs-realtime-bindings",
+    "requests"))
 use_virtualenv("r-nyc_transit")
 
 ### UI HELPER FUNCTIONS
