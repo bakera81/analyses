@@ -64,7 +64,7 @@ ui <- page_sidebar(
     min_height = 450
   ),
   card(
-    plotlyOutput("past_alert_freq", height = 400),
+    plotlyOutput("alert_vol_ecdf", height = 400),
     height = 450,
     min_height = 450
   ),
@@ -220,6 +220,7 @@ server <- function(input, output) {
           month(month, label = T), 
           "week", week_of_month, 
           wday(day_of_week, label = T, week_start = 7)),
+        # Highlight today's date on the x axis
         yoy_comp_date = if_else(
           month == month(today()) &
             week_of_month == ceiling(day(today()) / 7) &
@@ -242,9 +243,6 @@ server <- function(input, output) {
         name = "",
         values = c("Current" = "dashed")
       ) +
-      # scale_x_continuous(
-      #   breaks = x_breaks,
-      #   labels = x_labels) +
       scale_y_continuous(breaks = pretty_breaks()) + 
       scale_fill_brewer() + 
       theme(
@@ -272,6 +270,87 @@ server <- function(input, output) {
     
   })
   
+  
+  output$alert_vol_ecdf <- renderPlotly({
+    
+    # Load the reactive data
+    # data <- selected_route_day_vol_data() 
+    
+    # Get current alert volume
+    n_current_alerts <- 
+      selected_rt_alerts()$data %>%
+      count() %>%
+      pull(n)
+    
+    p_ecdf <- 
+      selected_route_day_vol_data() %>%
+      ggplot(aes(n_alerts)) + 
+      stat_ecdf()
+      
+    
+    # Get coordinates to highlight today's value 
+    today_y <- 
+      layer_data(p_ecdf, 1) %>%
+      as_tibble() %>%
+      mutate(diff = abs(x - n_current_alerts)) %>%
+      arrange(diff) %>%
+      head(1) %>%
+      pull(y)
+    
+    p <- 
+      p_ecdf + 
+      annotate(
+        "segment",
+        x = n_current_alerts,
+        y = 0,
+        xend = n_current_alerts,
+        yend = today_y,
+        linetype = "dashed",
+        color = "red"
+      ) + 
+      annotate(
+        "segment",
+        x = 0,
+        y = today_y,
+        xend = n_current_alerts,
+        yend = today_y,
+        linetype = "dashed",
+        color = "red"
+      ) + 
+      # Plotly doesn't respect geom_label
+      # annotate(
+      #   "label",
+      #   x = 1,
+      #   y = today_y,
+      #   label = round(today_y, 2),
+      #   color = "red",
+      #   vjust = -3
+      # ) +
+      labs(
+        title = paste(
+          "ECDF: Alerts per day for", 
+          get_current_service(), input$radio, "trains"),
+        x = "Number of alerts per day",
+        y = "Fraction of all days, 2022 - 2024"
+      )
+    
+    ggplotly(p) %>%
+      layout(
+        annotations = list(
+          list(
+            x = 1,
+            y = today_y,
+            text = round(today_y, 2),
+            showarrow = FALSE,
+            xref = "x",
+            yref = "y",
+            font = list(color = "red"),
+            bgcolor = "#FFFFFF",  # Background color with opacity
+            bordercolor = "red",
+            borderwidth = 2,
+            borderpad = 4)))
+    
+  })
   
   output$past_alert_duration <- renderPlotly({
     p <- 
