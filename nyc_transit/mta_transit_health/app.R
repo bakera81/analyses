@@ -1,4 +1,3 @@
-
 library(shiny)
 library(bslib)
 library(plotly)
@@ -20,11 +19,10 @@ all_routes <- get_all_routes(alert_counts)
 radio_choice_names <- get_radio_choice_names(all_routes)
 radio_choice_values <- all_routes$route_id
 
-# Define UI for application that draws a histogram
+# UI 
 ui <- page_sidebar(
 
   # Application title
-  # titlePanel("MTA Subway Alert Status"),
   title = "Realtime MTA Subway Alert Explorer",
   
   # Sidebar
@@ -76,6 +74,53 @@ ui <- page_sidebar(
     tags$h2("Current alerts"),
     uiOutput("selected_route_alerts"),
     min_height = 450
+  ),
+  card_footer(
+    tags$p(
+      tags$i(
+        "Data from", 
+        tags$a(
+          "Data.gov", 
+          href = "https://catalog.data.gov/dataset/mta-service-alerts-beginning-april-2020",
+          target = "_blank"),
+        "and",
+        tags$a(
+          "NYC MTA",
+          href = "https://api.mta.info/#/serviceAlerts",
+          target = "_blank"
+        ),
+        "(",
+        tags$a(
+          "Source code",
+          href = "https://github.com/bakera81/analyses/tree/main/nyc_transit/mta_transit_health",
+          target = "_blank"
+        ),
+        ")."
+      )
+    ),
+    tags$p(
+      tags$i(
+        "Made by",
+        tags$a(
+          "A.W. Baker",
+          href = "https://anthony.computer",
+          target = "_blank"
+        )
+      )
+    ),
+    tags$p(
+      tags$i(
+        tags$a(
+          "Contact",
+          href = "mailto:anthonywbaker1@gmail.com"),
+        "/",
+        tags$a(
+          "More data analyses",
+          href = "https://analyses.anthony.computer",
+          target = "_blank"
+        )
+      )
+    )
   )
 )
 

@@ -386,22 +386,11 @@ get_gtfs_rt_alerts <- function() {
 }
 
 get_all_routes <- function(past_alerts) {
-  
   past_alerts %>%
     ungroup() %>%
     distinct(route_id = affected) %>%
     enrich_routes(route_id) %>%
     select(-route_grouping_fct)
-    # distinct(route_id, route_grouping)
-    # left_join(
-    #   rt_alerts, 
-    #   by = "route_id") %>%
-    # group_by(route_id, route_grouping, route_grouping_fct) %>%
-    # summarise(
-    #   active_alerts = sum(!is.na(id)),
-    #   headers = list(header__en)) %>%
-    # arrange(route_grouping_fct) %>%
-    # select(-headers, -route_grouping_fct) 
 }
 
 get_real_window_size <- function(window_size, current_service = get_current_service()) {
