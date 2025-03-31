@@ -152,5 +152,25 @@
     "crumbs": [
       "Home"
     ]
+  },
+  {
+    "objectID": "index.html#about-me",
+    "href": "index.html#about-me",
+    "title": "Data Analysis Portfolio",
+    "section": "About Me",
+    "text": "About Me\nI’m a product manager and data scientist with experience at education, analytics, and AI companies. I’m obsessed with first principles and decision science: blending quantitative techniques (like analytics and modeling) and qualitative techniques (like JTBD research, business opportunity sizing, et al.) to help orgs make great decisions fast.\nInterested in working together? Let me know.",
+    "crumbs": [
+      "Home"
+    ]
+  },
+  {
+    "objectID": "index.html#all-analyses",
+    "href": "index.html#all-analyses",
+    "title": "Data Analysis Portfolio",
+    "section": "All Analyses",
+    "text": "All Analyses\n\nRealtime GTFS Subway Alerts Dashboard: Realtime dashboard using GTFS data to explore current NYC subway alerts.\nNYC Elevators: Exploring the tallest and fastest elevators in NYC.\nSEPTA Transit Timetables: Using Great Tables to style presentation-worthy transit data.",
+    "crumbs": [
+      "Home"
+    ]
   }
 ]
