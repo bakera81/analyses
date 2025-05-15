@@ -4,22 +4,15 @@ format: html
 editor: visual
 cache.lazy: false
 cache: false
-# execute: 
-#   eval: false
+warning: false
 ---
 
 ```{r}
+#| echo: false
 library(tidyverse)
 library(tidytext)
 library(progressr)
 theme_set(theme_light())
-
-# Disable cache.lazy to workaround error with large dataframes
-# knitr::opts_chunk$set(
-#     cache = TRUE, warning = FALSE, 
-#     message = FALSE, cache.lazy = FALSE)
-
-# options(cache.lazy = FALSE)
 ```
 
 ## Data collection
@@ -29,7 +22,7 @@ Separately, I downloaded every post on the `/r/ProductManagement` subreddit to C
 Here, I read all the CSVs into a single tibble, and save it as an RDS object.
 
 ```{r read_data}
-#| eval=F
+#| eval: false
 
 # Read all CSVs from directory
 filenames <- 
