@@ -7,7 +7,7 @@ cache: false
 warning: false
 ---
 
-```{r}
+```{r setup}
 #| echo: false
 library(tidyverse)
 library(tidytext)
@@ -17,9 +17,112 @@ theme_set(theme_light())
 
 ## Data collection
 
-Separately, I downloaded every post on the `/r/ProductManagement` subreddit to CSVs using Python and the pullpush.io API.
+I downloaded every post on the `/r/ProductManagement` subreddit to CSVs using Python and the pullpush.io API (I ran this over a weekend).
 
-Here, I read all the CSVs into a single tibble, and save it as an RDS object.
+``` {python api}
+#| eval: false
+#| python.reticulate: false
+
+import requests
+import requests.auth
+import os
+from bs4 import BeautifulSoup
+import pandas as pd
+import time
+import random
+from datetime import datetime
+from ratelimit import limits, sleep_and_retry
+
+@sleep_and_retry
+@limits(calls=100, period=3600)  # 100 calls per hour
+def fetch_posts_pullpush(subreddit, timestamp, size=100):
+  """
+    Fetch posts from PullPush API
+  """
+  url = 'https://api.pullpush.io/reddit/search/submission/'
+  params = {
+    'subreddit': subreddit,
+    'size': size,
+    'sort': 'desc',
+    'before': timestamp
+  }
+
+  response = requests.get(url, params=params)
+  
+  current_time = datetime.now().strftime("%H:%M:%S")
+
+  # Handle rate limiting
+  if response.status_code == 429:
+    print(f"[{current_time}] Rate limit exceeded. Sleeping for 1 hour...")
+    time.sleep(3600)
+    return fetch_posts_pullpush(subreddit, timestamp, size)
+
+  # return error if response is not 200
+  elif response.status_code != 200:
+    raise ValueError(f"Error fetching posts: {response.status_code} - {response.text}")
+  
+  data = response.json()
+  
+  # Check if data is empty
+  if not data.get('data'):
+    print(data)
+    raise ValueError("No data found in response")
+
+  timestamp = min([int(post['created_utc']) for post in data['data']])
+  return data['data'], timestamp
+
+
+def write_posts_to_csv2(posts, timestamp):
+  """
+    Write posts to CSV file
+  """
+  now = datetime.now().strftime("%Y%m%d_%H%M%S")
+  filename = f"pullpush_run_at_{now}_to_{timestamp}.csv"
+  df = pd.DataFrame(posts)
+  df.to_csv(filename, index=False)
+
+
+timestamp = int(datetime.now().timestamp())
+subreddit = 'ProductManagement'
+i = 0
+week_of_posts = []
+
+while True:
+  i += 1
+  current_time = datetime.now().strftime("%H:%M:%S")
+
+  # Fetch posts
+  # print(f"[{current_time}] Fetching posts for page {i}...")
+  try:
+    data, timestamp = fetch_posts_pullpush(subreddit, timestamp)
+  except Exception as e:
+    print(f"[{current_time}] Error fetching posts: {e}")
+    week_of_posts.extend(data)
+    # Write to CSV  
+    write_posts_to_csv2(week_of_posts, 'error')
+    break
+
+  # Check if there are more posts
+  if not data or len(data) == 0:
+    print(f"[{current_time}] No more posts found.")
+    week_of_posts.extend(data)
+    write_posts_to_csv2(week_of_posts, 'no_more_posts')
+    break
+  
+  # Append posts to list
+  week_of_posts.extend(data)
+
+  # compile a week's worth of posts and write to CSV
+  if i % 7 == 0:
+    print(f"[{current_time}] Writing {len(week_of_posts)} posts to CSV for week {i // 7}...")
+    write_posts_to_csv2(week_of_posts, timestamp)
+    week_of_posts = []
+
+  # Sleep for a random time between 1 and 3 seconds
+  time.sleep(random.randint(1, 3))
+```
+
+Back in R, I read all the CSVs into a single tibble, and save it as an RDS object.
 
 ```{r read_data}
 #| eval: false
@@ -109,13 +212,14 @@ pm_posts_raw %>%
   saveRDS(paste0(today(), "_ProductManagement_all_posts.rds"))
 ```
 
+
+## Let's inspect the data
+
 ```{r load}
 pm_posts_raw <-     
     readRDS("data/ProductManagement_all_posts.rds") %>%
     mutate(date = date(created_utc))
 ```
-
-## Let's inspect the data
 
 ```{r inspect}
 # What are our date ranges?
