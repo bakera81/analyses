@@ -1,0 +1,272 @@
+---
+title: "Reddit Sentiment"
+format: html
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+library(tidytext)
+library(progressr)
+theme_set(theme_light())
+```
+
+```{r read_data}
+# Read all CSVs from directory
+filenames <- 
+  list.files(
+    path = "drafts/reddit_sentiment/data", 
+    # pattern = "pullpush_run_at_20250420_120233_to_1578586913",
+    pattern = "pullpush_", 
+    full.names = TRUE) %>%
+  set_names()
+
+read_csv(filenames) %>%
+  glimpse()
+  select(upvote_ratio)
+
+# Read a CSV from a file path. 
+# Select a subset of columns and manually specify the types
+read_posts <- function(fn) {
+  
+  p() # Update progress bar 
+  
+  # Some files do not have upvote_ratio (inexplicably)
+  if ("upvote_ratio" %in% names(read.csv(fn, nrows = 0))) {
+    read_csv(
+      fn,
+      col_select = c(
+        id, 
+        author, 
+        created_utc, 
+        subreddit_id,
+        num_comments, 
+        upvotes = score, 
+        upvote_ratio, 
+        title, 
+        selftext, 
+        url),
+      col_types = cols(
+        id = col_character(),
+        author = col_character(),
+        created_utc = col_number(),
+        subreddit_id = col_character(),
+        num_comments = col_number(),
+        score = col_number(),
+        upvote_ratio = col_number(),
+        title = col_character(),
+        selftext = col_character(),
+        url = col_character())) 
+  } else {
+    read_csv(
+      fn,
+      col_select = c(
+        id, 
+        author, 
+        created_utc, 
+        subreddit_id,
+        num_comments, 
+        upvotes = score, 
+        # upvote_ratio, 
+        title, 
+        selftext, 
+        url),
+      col_types = cols(
+        id = col_character(),
+        author = col_character(),
+        created_utc = col_number(),
+        subreddit_id = col_character(),
+        num_comments = col_number(),
+        score = col_number(),
+        # upvote_ratio = col_number(),
+        title = col_character(),
+        selftext = col_character(),
+        url = col_character())) %>%
+    mutate(upvote_ratio = NA)
+  }
+}
+
+# Big one: this takes a while  
+with_progress({
+  p <- progressor(along = 1:length(filenames))
+   
+  pm_posts_raw <- 
+    filenames %>%
+    map_df(read_posts, .id = "source_file") %>%
+    distinct(id, .keep_all = T) # Remove any duplicate posts
+    mutate(date = date(created_utc)) # Add a date col
+})
+
+pm_posts_raw %>%
+  saveRDS("ProductManagement_all_posts.rds")
+
+pm_posts_raw %>%
+  summarise(
+    min(date, na.rm = T),
+    max(date, na.rm = T))
+
+
+```
+
+```{r inspect}
+
+pm_posts_raw %>%
+  count(date) %>%
+  ggplot(aes(date, n)) + 
+  geom_line() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# TODO: scrape the most recent ones again
+pm_posts_raw %>%
+  count(date = floor_date(date, "month")) %>%
+  ggplot(aes(date, n)) + 
+  geom_line() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+# For our analysis, let's look only at posts after 2015, because that is when it started taking off
+
+pm_posts_raw %>%
+  filter(date >= "2015-01-01") %>%
+  ggplot(aes(upvotes, upvote_ratio)) + 
+  geom_point() 
+
+pm_posts_raw %>% 
+  arrange(desc(upvotes)) %>% 
+  View
+
+pm_posts_raw %>%
+  filter(date >= "2020-01-01") %>%
+  group_by(month = floor_date(date, "month")) %>%
+  summarise(
+    mean_upvote_ratio = mean(upvote_ratio, na.rm = T), 
+    median_upvote_ratio = median(upvote_ratio, na.rm = T)) %>%
+  pivot_longer(-month, names_to = "metric", values_to = "value") %>%
+  ggplot(aes(month, value, color = metric)) + 
+  geom_line()
+
+```
+
+```{r tokenize}
+pm_tokens <- 
+  pm_posts_raw %>%
+  filter(date >= "2015-01-01") %>%
+  mutate(text = paste(title, "\\n", selftext)) %>%
+  filter(author != "AutoModerator") %>%
+  unnest_tokens(word, text) %>%
+  anti_join(stop_words, by = "word") 
+
+# confirm uniqueness
+pm_posts_raw %>%
+  count(id, author, created_utc, num_comments, upvotes, upvote_ratio, url, sort = T)
+
+bing_word_sentiment <- 
+  pm_tokens %>%
+  inner_join(get_sentiments("bing"), by = "word") 
+
+bing_word_sentiment %>%
+  count(date = floor_date(date, "month"), sentiment) %>%
+  pivot_wider(names_from = "sentiment", values_from = "n") %>%
+  mutate(positive_ratio = positive / (positive + negative)) %>%
+  ggplot(aes(date, positive_ratio)) +
+  geom_line()
+
+# Now by post
+bing_word_sentiment %>%
+  count(id, author, date, num_comments, upvotes, upvote_ratio, url, sentiment) %>%
+  pivot_wider(names_from = "sentiment", values_from = "n") %>%
+  replace_na(list(negative = 0L, positive = 0L)) %>%
+  mutate(post_sentiment = if_else(positive > negative, "positive", "negative")) %>%
+  count(date = floor_date(date, "month"), post_sentiment) %>%
+  group_by(date) %>%
+  add_count(wt = n, name = "total") %>%
+  mutate(pct = n / total) %>%
+  filter(post_sentiment == "positive") %>%
+  pivot_longer(cols = c("pct", "total"), names_to = "metric", values_to = "value") %>%
+  ggplot(aes(date, value)) + 
+  geom_line() + 
+  facet_wrap(~metric, ncol = 1, scales = "free_y")
+
+
+afinn_sentiment <- 
+  pm_tokens %>%
+  inner_join(get_sentiments("afinn"), by = "word") %>%
+  group_by(
+    id, author, created_utc, num_comments, upvotes, upvote_ratio, url) %>%
+  summarise(
+    net_afinn = sum(value, na.rm = T),
+    median_afinn = median(value, na.rm = T),
+    mean_afinn = mean(value, na.rm = T)) %>%
+  ungroup()
+
+
+```
+
+## What words come up more now than in the past?
+
+```{r}
+afinn_sentiment %>%
+  count(date = created_utc) %>%
+  ggplot(aes(date, n)) + 
+  geom_col()
+
+afinn_sentiment %>%
+  count(date = created_utc, positive = net_afinn > 0) %>% 
+  group_by(date) %>%
+  add_count(name = "total", wt = n) %>%
+  mutate(pct_positive = n / total) %>%
+  filter(positive) %>%
+  ggplot(aes(date, pct_positive)) + 
+  geom_col()
+
+afinn_sentiment %>%
+  mutate(date = floor_date(created_utc, "week")) %>%
+  ggplot(aes(date, net_afinn, group = date)) + 
+  geom_boxplot() + 
+  scale_y_log10()
+
+
+afinn_sentiment %>%
+  inner_join(
+    pm_posts %>% select(id, url),
+    by = "id") %>%
+  arrange(net_afinn) %>%
+  View
+
+```
+
+```{pm_tokens %>%}
+  inner_join(get_sentiments("nrc"), by = "word") %>%
+  count(sentiment, word) %>%
+  group_by(sentiment) %>%
+  slice_max(n, n = 10) %>%
+  # arrange(sentiment, n)
+  ggplot(aes(reorder_within(word, n, sentiment), n)) + 
+  geom_col() + 
+  facet_wrap(~sentiment, scales = "free_y") + 
+  scale_x_reordered() + 
+  coord_flip()
+
+pm_tokens %>%
+  mutate(date = floor_date(date(created_utc), "week")) %>%
+  inner_join(get_sentiments("bing"), by = "word") %>%
+  count(date, sentiment) %>%
+  pivot_wider(names_from = "sentiment", values_from = n) %>%
+  mutate(
+    total = positive + negative,
+    pct_positive = positive / total) %>%
+  ggplot(aes(date, pct_positive)) + 
+  geom_line() + 
+  geom_smooth() +
+  scale_y_continuous(labels = scales::percent) +
+  expand_limits(y = c(0, 1))
+  
+
+```
+
+1.  **AFINN**: A lexicon that assigns words with a score from -5 (most negative) to 5 (most positive)
+
+2.  **Bing**: Categorizes words as positive or negative
+
+3.  **NRC**: Categorizes words into eight emotions (anger, anticipation, disgust, fear, joy, sadness, surprise, trust) and two sentiments (positive and negative)
+
+4.  **Loughran**: Financial sentiment lexicon particularly useful for analyzing financial texts

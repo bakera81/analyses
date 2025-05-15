@@ -1,0 +1,45 @@
+---
+title: "job_search"
+format: html
+editor: visual
+---
+
+## Step 1: Download LinkedIn Connections
+
+LinkedIn \> Settings \> Data Privacy \> Get a Copy of Your Data.
+
+```{r download_li_connections}
+
+library(tidyverse)
+
+connections_raw <- read_csv(
+  "drafts/job_search/Connections.csv",
+  skip = 2) %>%
+  janitor::clean_names()
+  
+```
+
+## Step 2: Give an LLM all of the companies you have a connection to
+
+```{r}
+
+connections_raw %>%
+  count(company, sort = T) %>%
+  head(50) %>%
+  select(company) %>%
+  clipr::write_clip()
+
+connections_raw %>%
+  filter(
+    !str_detect(company, "Workera"),
+    !is.na(company)) %>%
+  count(company, sort = T, name = "n_connections") %>%
+  slice(601:650) %>% 
+  select(company) %>%
+  clipr::write_clip()
+  write_csv("drafts/job_search/connected_companies.csv")
+```
+
+### Prompt
+
+> For every company in this list, go on the web and find their job postings URL. Make sure it is the URL for all open jobs, not a page that only describes what it's like to work there (often called a careers page). Generate a short description of what the company does and save it as a csv with the columns `company_name`, `description`, and `job_postings_url`.
