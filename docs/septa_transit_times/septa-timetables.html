@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.5.57">
+<meta name="generator" content="quarto-1.6.40">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -69,10 +69,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-549806ee2085284f45b00abea8c6df48.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-49c8c4e9abc5c85f6ef827bc95f3ef76.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "sidebar",
   "copy-button": false,
@@ -113,7 +113,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../tidy_tuesday_nyc_elevators/tidy_tuesday_nyc_elevators.html">Analyses</a></li><li class="breadcrumb-item"><a href="../septa_transit_times/septa-timetables.html">Recreating Septa Transit Timetables in R</a></li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="https://bakerlabs.shinyapps.io/mta_transit_health/">Analyses</a></li><li class="breadcrumb-item"><a href="../septa_transit_times/septa-timetables.html">Recreating Septa Transit Timetables in R</a></li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
       <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
@@ -153,6 +153,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           </a> 
       </div>
       <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="https://bakerlabs.shinyapps.io/mta_transit_health/" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Realtime GTFS Subway Alerts dashboard</span></a>
+  </div>
+</li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../tidy_tuesday_nyc_elevators/tidy_tuesday_nyc_elevators.html" class="sidebar-item-text sidebar-link">
@@ -211,7 +217,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
-<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../tidy_tuesday_nyc_elevators/tidy_tuesday_nyc_elevators.html">Analyses</a></li><li class="breadcrumb-item"><a href="../septa_transit_times/septa-timetables.html">Recreating Septa Transit Timetables in R</a></li></ol></nav>
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="https://bakerlabs.shinyapps.io/mta_transit_health/">Analyses</a></li><li class="breadcrumb-item"><a href="../septa_transit_times/septa-timetables.html">Recreating Septa Transit Timetables in R</a></li></ol></nav>
 <div class="quarto-title">
 <h1 class="title">Recreating Septa Transit Timetables in R</h1>
 </div>
@@ -236,7 +242,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <pre><code>── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
 ✔ dplyr     1.1.4     ✔ readr     2.1.5
 ✔ forcats   1.0.0     ✔ stringr   1.5.1
-✔ ggplot2   3.5.1     ✔ tibble    3.2.1
+✔ ggplot2   3.5.2     ✔ tibble    3.2.1
 ✔ lubridate 1.9.4     ✔ tidyr     1.3.1
 ✔ purrr     1.0.4     
 ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
@@ -351,24 +357,24 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
 <span id="cb10-63"><a href="#cb10-63" aria-hidden="true" tabindex="-1"></a>    <span class="at">row.striping.background_color =</span> <span class="st">"#A9A9A9"</span>) <span class="sc">%&gt;%</span></span>
 <span id="cb10-64"><a href="#cb10-64" aria-hidden="true" tabindex="-1"></a>  <span class="fu">opt_table_font</span>(<span class="at">font =</span> <span class="fu">google_font</span>(<span class="st">"IBM Plex Sans"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display" data-html-table-processing="none">
-<div id="hakrtcblgx" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<div id="vzehlikwyj" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
 <style>@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
-#hakrtcblgx table {
+#vzehlikwyj table {
   font-family: 'IBM Plex Sans', system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#hakrtcblgx thead, #hakrtcblgx tbody, #hakrtcblgx tfoot, #hakrtcblgx tr, #hakrtcblgx td, #hakrtcblgx th {
+#vzehlikwyj thead, #vzehlikwyj tbody, #vzehlikwyj tfoot, #vzehlikwyj tr, #vzehlikwyj td, #vzehlikwyj th {
   border-style: none;
 }
 
-#hakrtcblgx p {
+#vzehlikwyj p {
   margin: 0;
   padding: 0;
 }
 
-#hakrtcblgx .gt_table {
+#vzehlikwyj .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -394,12 +400,12 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   border-left-color: #D3D3D3;
 }
 
-#hakrtcblgx .gt_caption {
+#vzehlikwyj .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#hakrtcblgx .gt_title {
+#vzehlikwyj .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -411,7 +417,7 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   border-bottom-width: 0;
 }
 
-#hakrtcblgx .gt_subtitle {
+#vzehlikwyj .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -423,7 +429,7 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   border-top-width: 0;
 }
 
-#hakrtcblgx .gt_heading {
+#vzehlikwyj .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -435,13 +441,13 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   border-right-color: #D3D3D3;
 }
 
-#hakrtcblgx .gt_bottom_border {
+#vzehlikwyj .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#hakrtcblgx .gt_col_headings {
+#vzehlikwyj .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -456,7 +462,7 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   border-right-color: #D3D3D3;
 }
 
-#hakrtcblgx .gt_col_heading {
+#vzehlikwyj .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -476,7 +482,7 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   overflow-x: hidden;
 }
 
-#hakrtcblgx .gt_column_spanner_outer {
+#vzehlikwyj .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -488,15 +494,15 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   padding-right: 4px;
 }
 
-#hakrtcblgx .gt_column_spanner_outer:first-child {
+#vzehlikwyj .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#hakrtcblgx .gt_column_spanner_outer:last-child {
+#vzehlikwyj .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#hakrtcblgx .gt_column_spanner {
+#vzehlikwyj .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -508,11 +514,11 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   width: 100%;
 }
 
-#hakrtcblgx .gt_spanner_row {
+#vzehlikwyj .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#hakrtcblgx .gt_group_heading {
+#vzehlikwyj .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -538,7 +544,7 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   text-align: left;
 }
 
-#hakrtcblgx .gt_empty_group_heading {
+#vzehlikwyj .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -553,15 +559,15 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   vertical-align: middle;
 }
 
-#hakrtcblgx .gt_from_md > :first-child {
+#vzehlikwyj .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#hakrtcblgx .gt_from_md > :last-child {
+#vzehlikwyj .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#hakrtcblgx .gt_row {
+#vzehlikwyj .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -580,7 +586,7 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   overflow-x: hidden;
 }
 
-#hakrtcblgx .gt_stub {
+#vzehlikwyj .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -593,7 +599,7 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   padding-right: 5px;
 }
 
-#hakrtcblgx .gt_stub_row_group {
+#vzehlikwyj .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -607,15 +613,15 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   vertical-align: top;
 }
 
-#hakrtcblgx .gt_row_group_first td {
+#vzehlikwyj .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#hakrtcblgx .gt_row_group_first th {
+#vzehlikwyj .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#hakrtcblgx .gt_summary_row {
+#vzehlikwyj .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -625,16 +631,16 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   padding-right: 5px;
 }
 
-#hakrtcblgx .gt_first_summary_row {
+#vzehlikwyj .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#hakrtcblgx .gt_first_summary_row.thick {
+#vzehlikwyj .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#hakrtcblgx .gt_last_summary_row {
+#vzehlikwyj .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -644,7 +650,7 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   border-bottom-color: #D3D3D3;
 }
 
-#hakrtcblgx .gt_grand_summary_row {
+#vzehlikwyj .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -654,7 +660,7 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   padding-right: 5px;
 }
 
-#hakrtcblgx .gt_first_grand_summary_row {
+#vzehlikwyj .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -664,7 +670,7 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   border-top-color: #D3D3D3;
 }
 
-#hakrtcblgx .gt_last_grand_summary_row_top {
+#vzehlikwyj .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -674,11 +680,11 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   border-bottom-color: #D3D3D3;
 }
 
-#hakrtcblgx .gt_striped {
+#vzehlikwyj .gt_striped {
   background-color: #A9A9A9;
 }
 
-#hakrtcblgx .gt_table_body {
+#vzehlikwyj .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -687,7 +693,7 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   border-bottom-color: #D3D3D3;
 }
 
-#hakrtcblgx .gt_footnotes {
+#vzehlikwyj .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -701,7 +707,7 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   border-right-color: #D3D3D3;
 }
 
-#hakrtcblgx .gt_footnote {
+#vzehlikwyj .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -710,7 +716,7 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   padding-right: 5px;
 }
 
-#hakrtcblgx .gt_sourcenotes {
+#vzehlikwyj .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -724,7 +730,7 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   border-right-color: #D3D3D3;
 }
 
-#hakrtcblgx .gt_sourcenote {
+#vzehlikwyj .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -732,72 +738,72 @@ time (8): 8210, 8242, 8318, 8322, 8338, 8716, 8750, 8756
   padding-right: 5px;
 }
 
-#hakrtcblgx .gt_left {
+#vzehlikwyj .gt_left {
   text-align: left;
 }
 
-#hakrtcblgx .gt_center {
+#vzehlikwyj .gt_center {
   text-align: center;
 }
 
-#hakrtcblgx .gt_right {
+#vzehlikwyj .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#hakrtcblgx .gt_font_normal {
+#vzehlikwyj .gt_font_normal {
   font-weight: normal;
 }
 
-#hakrtcblgx .gt_font_bold {
+#vzehlikwyj .gt_font_bold {
   font-weight: bold;
 }
 
-#hakrtcblgx .gt_font_italic {
+#vzehlikwyj .gt_font_italic {
   font-style: italic;
 }
 
-#hakrtcblgx .gt_super {
+#vzehlikwyj .gt_super {
   font-size: 65%;
 }
 
-#hakrtcblgx .gt_footnote_marks {
+#vzehlikwyj .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#hakrtcblgx .gt_asterisk {
+#vzehlikwyj .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#hakrtcblgx .gt_indent_1 {
+#vzehlikwyj .gt_indent_1 {
   text-indent: 5px;
 }
 
-#hakrtcblgx .gt_indent_2 {
+#vzehlikwyj .gt_indent_2 {
   text-indent: 10px;
 }
 
-#hakrtcblgx .gt_indent_3 {
+#vzehlikwyj .gt_indent_3 {
   text-indent: 15px;
 }
 
-#hakrtcblgx .gt_indent_4 {
+#vzehlikwyj .gt_indent_4 {
   text-indent: 20px;
 }
 
-#hakrtcblgx .gt_indent_5 {
+#vzehlikwyj .gt_indent_5 {
   text-indent: 25px;
 }
 
-#hakrtcblgx .katex-display {
+#vzehlikwyj .katex-display {
   display: inline-flex !important;
   margin-bottom: 0.75em !important;
 }
 
-#hakrtcblgx div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#vzehlikwyj div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
   height: 0px !important;
 }
 </style>
@@ -1118,8 +1124,6 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
   });
   clipboard.on('success', onCopySuccess);
   if (window.document.getElementById('quarto-embedded-source-code-modal')) {
-    // For code content inside modals, clipBoardJS needs to be initialized with a container option
-    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
     const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
       text: getTextToCopy,
       container: window.document.getElementById('quarto-embedded-source-code-modal')
@@ -1230,7 +1234,6 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
       if (window.Quarto?.typesetMath) {
         window.Quarto.typesetMath(note);
       }
-      // TODO in 1.5, we should make sure this works without a callout special case
       if (note.classList.contains("callout")) {
         return note.outerHTML;
       } else {

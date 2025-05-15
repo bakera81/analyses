@@ -2,14 +2,26 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://analyses.anthony.computer/index.html</loc>
-    <lastmod>2025-03-31T19:59:34.496Z</lastmod>
+    <lastmod>2025-05-15T17:39:31.370Z</lastmod>
   </url>
   <url>
     <loc>https://analyses.anthony.computer/septa_transit_times/septa-timetables.html</loc>
-    <lastmod>2025-03-13T21:20:13.901Z</lastmod>
+    <lastmod>2025-05-15T13:41:04.577Z</lastmod>
   </url>
   <url>
     <loc>https://analyses.anthony.computer/tidy_tuesday_nyc_elevators/tidy_tuesday_nyc_elevators.html</loc>
     <lastmod>2025-03-24T15:01:52.299Z</lastmod>
+  </url>
+  <url>
+    <loc>https://analyses.anthony.computer/reddit_sentiment/reddit_sentiment.html</loc>
+    <lastmod>2025-05-15T17:26:03.577Z</lastmod>
+  </url>
+  <url>
+    <loc>https://data.anthony.computer/index.html</loc>
+    <lastmod>2025-05-15T18:00:01.998Z</lastmod>
+  </url>
+  <url>
+    <loc>https://data.anthony.computer/reddit_sentiment/reddit_sentiment.html</loc>
+    <lastmod>2025-05-15T18:02:30.936Z</lastmod>
   </url>
 </urlset>

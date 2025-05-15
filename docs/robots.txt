@@ -1,1 +1,1 @@
-Sitemap: https://analyses.anthony.computer/sitemap.xml
+Sitemap: https://data.anthony.computer/sitemap.xml

@@ -1,0 +1,351 @@
+---
+title: "Analyzing sentiment on r/ProductManagement"
+format: html
+editor: visual
+cache.lazy: false
+cache: false
+# execute: 
+#   eval: false
+---
+
+```{r}
+library(tidyverse)
+library(tidytext)
+library(progressr)
+theme_set(theme_light())
+
+# Disable cache.lazy to workaround error with large dataframes
+# knitr::opts_chunk$set(
+#     cache = TRUE, warning = FALSE, 
+#     message = FALSE, cache.lazy = FALSE)
+
+# options(cache.lazy = FALSE)
+```
+
+## Data collection
+
+Separately, I downloaded every post on the `/r/ProductManagement` subreddit to CSVs using Python and the pullpush.io API.
+
+Here, I read all the CSVs into a single tibble, and save it as an RDS object.
+
+```{r read_data}
+#| eval=F
+
+# Read all CSVs from directory
+filenames <- 
+  list.files(
+    path = "drafts/reddit_sentiment/data", 
+    # pattern = "pullpush_run_at_20250420_120233_to_1578586913",
+    pattern = "pullpush_", 
+    full.names = TRUE) %>%
+  set_names()
+
+# Read a CSV from a file path. 
+# Select a subset of columns and manually specify the types
+read_posts <- function(fn) {
+  
+  p() # Update progress bar 
+  
+  # Some files do not have upvote_ratio (inexplicably)
+  if ("upvote_ratio" %in% names(read.csv(fn, nrows = 0))) {
+    read_csv(
+      fn,
+      col_select = c(
+        id, 
+        author, 
+        created_utc, 
+        subreddit_id,
+        num_comments, 
+        upvotes = score, 
+        upvote_ratio, 
+        title, 
+        selftext, 
+        url),
+      col_types = cols(
+        id = col_character(),
+        author = col_character(),
+        created_utc = col_number(),
+        subreddit_id = col_character(),
+        num_comments = col_number(),
+        score = col_number(),
+        upvote_ratio = col_number(),
+        title = col_character(),
+        selftext = col_character(),
+        url = col_character())) 
+  } else {
+    read_csv(
+      fn,
+      col_select = c(
+        id, 
+        author, 
+        created_utc, 
+        subreddit_id,
+        num_comments, 
+        upvotes = score, 
+        # upvote_ratio, 
+        title, 
+        selftext, 
+        url),
+      col_types = cols(
+        id = col_character(),
+        author = col_character(),
+        created_utc = col_number(),
+        subreddit_id = col_character(),
+        num_comments = col_number(),
+        score = col_number(),
+        # upvote_ratio = col_number(),
+        title = col_character(),
+        selftext = col_character(),
+        url = col_character())) %>%
+    mutate(upvote_ratio = NA)
+  }
+}
+
+# Big one: this may take a while  
+with_progress({
+  p <- progressor(along = 1:length(filenames))
+   
+  pm_posts_raw <- 
+    filenames %>%
+    map_df(read_posts, .id = "source_file") %>%
+    distinct(id, .keep_all = T) # Remove any duplicate posts
+    mutate(date = date(created_utc)) # Add a date col
+})
+
+pm_posts_raw %>%
+  saveRDS(paste0(today(), "_ProductManagement_all_posts.rds"))
+```
+
+```{r load}
+pm_posts_raw <-     
+    readRDS("data/ProductManagement_all_posts.rds") %>%
+    mutate(date = date(created_utc))
+```
+
+## Let's inspect the data
+
+```{r inspect}
+# What are our date ranges?
+pm_posts_raw %>%
+  summarise(
+    min(date, na.rm = T),
+    max(date, na.rm = T))
+```
+
+### Posts per day
+
+```{r posts_per_day}
+pm_posts_raw %>%
+  count(date = floor_date(date, "week")) %>% 
+  ggplot(aes(date, n)) + 
+  geom_line() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(
+      title = "/r/ProductManagement posts per week",
+      subtitle = "Does not include comments.",
+  x = "Week",
+  y = "New posts")
+```
+
+For our analysis, let's look only at posts after 2015, because that is when it started taking off.
+
+### Upvotes and upvote ratios
+
+```{r upvotes}
+pm_posts_raw %>%
+  filter(date >= "2015-01-01") %>%
+  ggplot(aes(upvotes, upvote_ratio)) + 
+  geom_point() +
+  scale_y_continuous(labels = scales::percent_format()) +
+  labs(
+      title = "Upvotes and upvote ratio",
+      y = "upvote %")
+```
+
+Woah, that's a serious outlier. The most upvotes of all time, and a nearly perfect upvote ratio... what's going on?
+
+```{r}
+#| eval=F
+the_post <- pm_posts_raw %>% 
+  arrange(desc(upvotes)) %>% 
+    select(title, url) %>% 
+    head(1) 
+```
+
+It's this infamous post: [My Advice on How to Be a Terrible but Valuable PM](https://www.reddit.com/r/ProductManagement/comments/1ifpc29/my_advice_on_how_to_be_a_terrible_but_valuable_pm/)
+
+I think this is an incredibly negative post. It's an indictment of the entire function of product management. Is it really an outlier? Or has sentiment among PMs been decreasing over time?
+
+## Tokenize the posts
+
+```{r tokenize}
+#| results: 'hide'
+pm_tokens <- pm_posts_raw %>%
+  filter(date >= "2015-01-01") %>%
+  mutate(text = paste(title, "\\n", selftext)) %>%
+  filter(author != "AutoModerator") %>%
+  unnest_tokens(word, text) %>%
+  # Remove stopwords
+  anti_join(stop_words, by = "word") %>%
+  # Remove "words" without letters
+  filter(str_detect(word, "[A-Za-z]"))
+
+# pm_tokens %>% saveRDS("reddit_sentiment/data/pm_tokens.rds")
+```
+
+```{r bingify}
+# pm_tokens <- readRDS("data/pm_tokens.rds")
+
+# Use the Bing dataset to identify sentiment of individual words 
+bing_word_sentiment <- 
+  pm_tokens %>%
+  inner_join(get_sentiments("bing"), by = "word") 
+
+bing_word_sentiment %>%
+  count(date = floor_date(date, "month"), sentiment) %>%
+  pivot_wider(names_from = "sentiment", values_from = "n") %>%
+  mutate(positive_ratio = positive / (positive + negative)) %>%
+  ggplot(aes(date, positive_ratio)) +
+  geom_line() + 
+  expand_limits(y = 0) +
+  scale_y_continuous(labels = scales::percent) +
+  labs(
+      title = "Overall /r/ProductManagement sentiment by month",
+      x = "Month",
+      y = "% positive words")
+```
+
+While noiser in 2016, the overall sentiment seems to settle a bit over 50%.
+
+```{r sentiment_by_post}
+# Now by post
+bing_word_sentiment %>%
+  count(id, author, date, num_comments, upvotes, upvote_ratio, url, sentiment) %>%
+  pivot_wider(names_from = "sentiment", values_from = "n") %>%
+  replace_na(list(negative = 0L, positive = 0L)) %>%
+  mutate(post_sentiment = if_else(positive > negative, "positive", "negative")) %>%
+  count(date = floor_date(date, "month"), post_sentiment) %>%
+  group_by(date) %>%
+  add_count(wt = n, name = "All posts") %>%
+  mutate(`% of positive posts` = n / `All posts`) %>%
+  filter(post_sentiment == "positive") %>%
+  pivot_longer(
+      cols = c("% of positive posts", "All posts"), 
+      names_to = "metric", 
+      values_to = "value") %>%
+  ggplot(aes(date, value)) + 
+  geom_line() + 
+  expand_limits(y = 0) +
+  facet_wrap(~metric, ncol = 1, scales = "free_y") +
+  labs(
+      title = "Posts by month",
+      x = "Month",
+      y = "")
+```
+
+We can see that as our sample size increases, we see less noise in the percentage of positive posts.
+
+## Most popular words by sentiment
+
+```{r popular_by_sentiment}
+bing_word_sentiment %>%
+    count(word, sentiment) %>%
+    group_by(sentiment) %>%
+    arrange(desc(n)) %>%
+    top_n(20, wt = n) %>%
+    mutate(rank = row_number()) %>%
+    select(-n) %>%
+    pivot_wider(names_from = "sentiment", values_from = "word") %>%
+    knitr::kable()
+```
+
+## What words come up more now than in the past?
+
+```{r}
+max_date <- pm_posts_raw %>%
+    summarise(max_date = max(date, na.rm = T)) %>%
+    pull(max_date)
+
+word_freqs <- pm_tokens %>%
+    group_by(period = if_else(date >= max_date - months(6), "recent", "past")) %>%
+    mutate(total_words = n()) %>%
+    ungroup() %>%
+    count(period, total_words, word) %>%
+    mutate(word_freq = n / total_words)
+
+by_period <- word_freqs %>%
+    filter(n >= 4) %>%
+    select(period, word, word_freq) %>%
+    pivot_wider(names_from = "period", values_from = word_freq)
+
+# by_period %>%
+#     filter(is.na(recent)) %>%
+#     arrange(desc(past)) %>%
+#     head(30) %>%
+#     View()
+
+by_period %>%
+    filter(is.na(past)) %>%
+    arrange(desc(recent)) %>%
+    select(words_with_biggest_increases = word) %>%
+    head(20) %>%
+    knitr::kable()
+```
+
+A lot of the words that had the biggest increases in the last 6 months tend to be newer technologies: v0 (AI coding tool), Bolt (AI coding tool), o1 (OpenAI model), "agentic", Bluesky (Twitter competitor).
+
+```{r}
+# 2x2: increase / decrease x sentiment
+big_movers <- by_period %>%
+    filter(!is.na(past), !is.na(recent)) %>%
+    mutate(pct_change = (recent - past) / past) %>%
+    inner_join(get_sentiments("bing"), by = "word") %>%
+    arrange(desc(abs(pct_change))) %>%
+    select(word, pct_change, sentiment) 
+
+# big_movers %>%
+#     filter(sentiment == "positive") %>%
+#     View
+
+big_movers %>%
+    mutate(pct_change = scales::percent(pct_change)) %>%
+    filter(sentiment == "negative") %>%
+    head(20) %>%
+    knitr::kable()
+```
+
+There are some big increases in clearly negative PM words. Note: the `pct_change` is calculated as the percent increase between the *frequency* of the word in the posts from the past 6 months vs the posts from longer than 6 months ago.
+
+Here are the words with a positive sentiment that have changed the most:
+
+```{r}
+big_movers %>%
+    mutate(pct_change = scales::percent(pct_change)) %>%
+    filter(sentiment == "positive") %>%
+    head(20) %>%
+    knitr::kable()
+```
+
+While these seem like generally positive words, this is a very dated approach to sentiment analysis with major limitations. For instance, even a seemingly positive word like "hug" can be quite misleading.
+
+Here are the search results on the subreddit for posts that contain "hug":
+
+-   Imposter syndrome - does every PM feel it?
+
+-   I am giving up on my career
+
+-   Weekly rant thread
+
+-   I feel like I'm under attack
+
+-   Guidance. PM team needs some love.
+
+-   Rant: Executives: If you don't care about the role, please stop being a part of the interview process
+
+-   Very new PM with ADHD, How do I tackle my weaknesses?
+
+-   Keeping up energy levels w/ high volume of meetings
+
+-   Unfair Performance management
+
+These are incredibly negative posts. PMs out there seem to be struggling.

@@ -38,6 +38,10 @@ Interested in working together? [Let me know](mailto:anthonywbaker1@gmail.com).
 
 ## All Analyses
 
+-   [Analyzing sentiment on r/ProductManagement](reddit_sentiment/reddit_sentiment.qmd): Simple sentiment analysis to get the vibe shift among product managers.
+
 -   [Realtime GTFS Subway Alerts Dashboard](https://bakerlabs.shinyapps.io/mta_transit_health/): Realtime dashboard using GTFS data to explore current NYC subway alerts.
+
 -   [NYC Elevators](/tidy_tuesday_nyc_elevators/tidy_tuesday_nyc_elevators.qmd): Exploring the tallest and fastest elevators in NYC.
+
 -   [SEPTA Transit Timetables](septa_transit_times/septa-timetables.qmd): Using Great Tables to style presentation-worthy transit data.

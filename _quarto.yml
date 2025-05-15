@@ -10,7 +10,7 @@ execute:
   cache: true
 website:
   title: "Data Analysis Portfolio"
-  site-url: https://analyses.anthony.computer
+  site-url: https://data.anthony.computer
   # navbar:
   #   left:
   #     - href: index.qmd
@@ -28,6 +28,7 @@ website:
             text: Realtime GTFS Subway Alerts dashboard
           - tidy_tuesday_nyc_elevators/tidy_tuesday_nyc_elevators.qmd
           - septa_transit_times/septa-timetables.qmd
+          - reddit_sentiment/reddit_sentiment.qmd
       - section: "More from Anthony"
         contents:
           - href: https://anthony.computer
