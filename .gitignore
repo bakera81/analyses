@@ -5,6 +5,7 @@
 
 .DS_Store
 
+.env
 /.quarto/
 _freeze/
 *_cache/

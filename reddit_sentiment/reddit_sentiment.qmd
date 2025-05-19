@@ -19,7 +19,7 @@ theme_set(theme_light())
 
 I downloaded every post on the `/r/ProductManagement` subreddit to CSVs using Python and the pullpush.io API (I ran this over a weekend).
 
-``` {python api}
+```{python api}
 #| eval: false
 #| python.reticulate: false
 
@@ -212,6 +212,27 @@ pm_posts_raw %>%
   saveRDS(paste0(today(), "_ProductManagement_all_posts.rds"))
 ```
 
+I'll also read in some recent posts I pulled from Reddit's official API for a different subreddit, `/r/modular`, for a comparison/
+
+```{r read_data_modular}
+#| eval: false
+#| message: false
+#| warning: false
+
+modular_filenames <- 
+  list.files(
+    path = "data/modular", 
+    pattern = "reddit_modular_", 
+    full.names = TRUE) %>%
+  set_names()
+
+modular_posts_raw <- 
+    modular_filenames %>%
+    map_df(read_csv, .id = "source_file") %>%
+    distinct(id, .keep_all = T) %>% # Remove any duplicate posts
+    mutate(date = date(created_utc)) # Add a date col
+
+```
 
 ## Let's inspect the data
 
@@ -341,6 +362,43 @@ bing_word_sentiment %>%
 ```
 
 We can see that as our sample size increases, we see less noise in the percentage of positive posts.
+
+### Compare with /r/modular
+
+```{r modular}
+#| eval: false
+
+mod_tokens <- 
+  modular_posts_raw %>% 
+  mutate(text = paste(title, "\\n", selftext)) %>%
+  filter(author != "AutoModerator") %>%
+  unnest_tokens(word, text) %>%
+  # Remove stopwords
+  anti_join(stop_words, by = "word") %>%
+  # Remove "words" without letters
+  filter(str_detect(word, "[A-Za-z]"))
+
+modular_positivity <- 
+  mod_tokens %>% 
+  inner_join(get_sentiments("bing"), by = "word") %>%
+  count(date = floor_date(date, "month"), sentiment) %>%
+  pivot_wider(names_from = "sentiment", values_from = "n") %>%
+  mutate(positive_ratio = positive / (positive + negative)) 
+
+modular_positivity %>%
+  ggplot(aes(date, positive_ratio)) +
+  geom_line() + 
+  expand_limits(y = 0) +
+  scale_y_continuous(labels = scales::percent) +
+  labs(
+      title = "Overall /r/modular sentiment by month",
+      x = "Month",
+      y = "% positive words")
+
+modular_positivity %>%
+  summarise(mean(positive_ratio))
+
+```
 
 ## Most popular words by sentiment
 
