@@ -1,0 +1,89 @@
+
+```{r}
+library(tidyverse)
+
+files <- list.files(
+  "drafts/baby_names/names",
+  pattern = "^yob\\d{4}\\.txt$",
+  full.names = TRUE
+)
+
+baby_names <- 
+    map_dfr(
+        files,
+        ~ read_csv(.x, col_names = c("name", "sex", "count")) %>%
+            mutate(year = as.integer(stringr::str_extract(.x, "\\d{4}")))
+)
+
+cutoff <- 2000
+
+name_stats <- 
+    baby_names %>%
+    group_by(year, sex) %>%
+    mutate(year_count = sum(count, na.rm = T)) %>%
+    ungroup() %>%
+    mutate(
+        pct = count / year_count,
+        era = if_else(year >= cutoff, "recent", "historical")) 
+
+era_stats <- 
+    name_stats %>% 
+    mutate(era = if_else(year >= cutoff, "recent", "historical")) %>%
+    group_by(name, sex, era) %>%
+    summarise(avg_pct = mean(pct, na.rm = T)) %>%
+    pivot_wider(
+        names_from = era,
+        values_from = avg_pct,
+        values_fill = 0
+    )
+
+scored <- 
+    era_stats %>%
+    mutate(
+        # faded_score = log1p(historical) * log1p(1 / (recent + 1e-6)))
+        # faded_score = log1p(historical * log1p(historical / (recent + 1e-6)))
+        tf = log1p(historical),
+        penalty = exp(-recent / 500),
+        score = tf * penalty
+    )
+
+scored %>%
+    arrange(desc(score)) %>%
+    head(1000) %>%
+    View()
+```
+
+
+```{r}
+by_era <- baby_names %>%
+    mutate(era = if_else(year >= cutoff, "recent", "historical")) %>%
+    group_by(name, sex, era) %>%
+    summarise(count = sum(count, na.rm = T)) %>%
+    ungroup() %>%
+    group_by(sex, era) %>%
+    arrange(desc(count)) %>%
+    mutate(
+        era_count = sum(count, na.rm = T),
+        pct_rank = percent_rank(count / era_count) * 100) %>%
+    ungroup() %>%
+    mutate(pct = count / era_count) 
+
+
+by_era %>%
+    filter(era == "historical") %>%
+    anti_join(
+        by_era %>%
+            filter(
+                era == "recent", 
+                pct_rank >= 75) %>%
+            distinct(name),
+        by = "name") %>%
+    arrange(desc(pct_rank)) %>%
+    View
+
+by_era %>%
+    filter(name %in% c("Sunshine", "Star", "Sky","Blue","Navy","Miles","Mia","River")) %>%
+    transmute(name, sex, era, pct = scales::percent(pct)) %>%
+    arrange(name, sex, era, desc(pct)) %>%
+    View    
+```
