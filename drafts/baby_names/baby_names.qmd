@@ -1,0 +1,219 @@
+
+```{r download}
+# From Project Gutenberg
+# install.packages("gutenbergr")
+# install.packages("tidytext")
+# install.packages("udpipe")
+
+library(tidyverse)
+library(gutenbergr)
+library(udpipe)
+
+
+model <- udpipe_download_model(language = "english")
+ud_model <- udpipe_load_model(model$file_model)
+
+# gutenberg_metadata %>% count(gutenberg_bookshelf, sort = T) %>%View
+
+gb_ids <- gutenberg_works( 
+    gutenberg_bookshelf %in% c(
+        "Category: Short Stories",
+        "Category: Poetry",
+        "Category: Science - Biology/Category: Nature/Gardening/Animals"
+    )
+)
+
+# corpus_stories <- gutenberg_download(
+#     gb_ids %>% 
+#         filter(gutenberg_bookshelf == "Category: Short Stories") %>% 
+#         pull(gutenberg_id)
+# )
+# saveRDS(corpus_stories, "corpus_stories.rds")
+
+corpus_stories <- readRDS("corpus_stories.rds")
+
+corpus_poems <- gutenberg_download(
+    gb_ids %>% 
+        filter(gutenberg_bookshelf == "Category: Poetry") %>% 
+        pull(gutenberg_id)
+)
+saveRDS(corpus_poems, "corpus_poems.rds")
+
+corpus_nature <- gutenberg_download(
+    gb_ids %>% 
+        filter(gutenberg_bookshelf == "Category: Science - Biology/Category: Nature/Gardening/Animals") %>% 
+        pull(gutenberg_id)
+)
+saveRDS(corpus_nature, "corpus_nature.rds")
+
+
+```
+
+```{r annotate}
+library(progressr)
+handlers(global = TRUE)  
+
+annotate_all <- function(corpus, category) {
+
+    with_progress({
+        p <- progressor(
+            steps = corpus %>% distinct(gutenberg_id) %>% nrow())
+
+        annotated_raw <- corpus %>%
+            group_by(gutenberg_id) %>%
+            summarise(text = paste(text, collapse = " ")) %>%
+            # filter(row_number() != 105) %>%
+            mutate(annotation = map2(gutenberg_id, text, ~ {
+                p()
+                out <- udpipe_annotate(ud_model, x = .y) %>%
+                    as.tibble()
+                filename <- paste0(
+                    "annotated_", category, "_", 
+                    format(Sys.time(), "%Y_%m_%d_%H_%M_%S"), 
+                    " - gid_", 
+                    .x, 
+                    ".rds")
+                saveRDS(out, filename)
+                out
+            }))
+    })
+}
+
+annotate_all(corpus_poems, "poems")
+
+files <- list.files(
+  path = "drafts/baby_names/data/poems/",
+  pattern = "^annotated_.*\\.rds$",
+  full.names = TRUE
+)
+
+annotated_poems <- files %>%
+  map(readRDS) %>%
+  bind_rows()
+
+
+
+# annotated_poems <- unnest(annotated_raw, annotation)
+saveRDS(annotated_poems, "drafts/baby_names/data/stories/annotated_poems.rds")
+
+# annotated_stories <- corpus_stories %>%
+#     pull(text) %>%
+#     paste(collapse = " ") %>%
+#     udpipe_annotate(ud_model, x = .)
+
+# saveRDS(annotated_stories, "annotated_stories.rds")
+
+
+```
+
+```{r analyze}
+words_stories <- annotated_stories %>%
+    as_tibble() %>%
+    select(lemma, upos, xpos)
+
+words_stories %>%
+    filter(upos == "PROPN") %>%
+    count(lemma, sort = T) %>%
+    View()
+
+words_poems <- annotated_poems %>%
+    as_tibble() %>%
+    select(lemma, upos, xpos)
+
+words_poems %>%
+    filter(upos == "PROPN") %>%
+    count(lemma, sort = T) %>%
+    View()
+```
+
+
+# From US Census
+```{r}
+
+library(tidyverse)
+
+files <- list.files(
+  "drafts/baby_names/names",
+  pattern = "^yob\\d{4}\\.txt$",
+  full.names = TRUE
+)
+
+baby_names <- 
+    map_dfr(
+        files,
+        ~ read_csv(.x, col_names = c("name", "sex", "count")) %>%
+            mutate(year = as.integer(stringr::str_extract(.x, "\\d{4}")))
+)
+
+cutoff <- 2000
+
+name_stats <- 
+    baby_names %>%
+    group_by(year, sex) %>%
+    mutate(year_count = sum(count, na.rm = T)) %>%
+    ungroup() %>%
+    mutate(
+        pct = count / year_count,
+        era = if_else(year >= cutoff, "recent", "historical")) 
+
+era_stats <- 
+    name_stats %>% 
+    mutate(era = if_else(year >= cutoff, "recent", "historical")) %>%
+    group_by(name, sex, era) %>%
+    summarise(avg_pct = mean(pct, na.rm = T)) %>%
+    pivot_wider(
+        names_from = era,
+        values_from = avg_pct,
+        values_fill = 0
+    )
+
+scored <- 
+    era_stats %>%
+    mutate(
+        # faded_score = log1p(historical) * log1p(1 / (recent + 1e-6)))
+        # faded_score = log1p(historical * log1p(historical / (recent + 1e-6)))
+        tf = log1p(historical),
+        penalty = exp(-recent / 500),
+        score = tf * penalty
+    )
+
+scored %>%
+    arrange(desc(score)) %>%
+    head(1000) %>%
+    View()
+```
+
+
+```{r}
+by_era <- baby_names %>%
+    mutate(era = if_else(year >= cutoff, "recent", "historical")) %>%
+    group_by(name, sex, era) %>%
+    summarise(count = sum(count, na.rm = T)) %>%
+    ungroup() %>%
+    group_by(sex, era) %>%
+    arrange(desc(count)) %>%
+    mutate(
+        era_count = sum(count, na.rm = T),
+        pct_rank = percent_rank(count / era_count) * 100) %>%
+    ungroup() %>%
+    mutate(pct = count / era_count) 
+
+
+by_era %>%
+    filter(era == "historical") %>%
+    anti_join(
+        by_era %>%
+            filter(
+                era == "recent", 
+                pct_rank >= 75) %>%
+            distinct(name),
+        by = "name") %>%
+    arrange(desc(pct_rank)) %>%
+    View
+
+by_era %>%
+    filter(name %in% c("Sunshine", "Star", "Sky","Blue","Navy","Miles","Mia","River")) %>%
+    transmute(name, sex, era, pct = scales::percent(pct)) %>%
+    arrange(name, sex, era, desc(pct)) %>%
+    View    
+```
